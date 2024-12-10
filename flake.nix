@@ -130,50 +130,53 @@
         # those are more easily expressed in perSystem.
         overlays.default = final: prev: let
           buildFn = n: v:
-            lib.nameValuePair n (lib.makeScope final.newScope (self: (lib.mkMerge [
-              {
-                base = self.callPackage ./src/base.nix {
-                  pname = n;
-                  private-build-plans = v;
-                };
-                ttf = final.runCommand "${n}-ttf" {} ''
-                  dest=$out/share/fonts/truetype
-                  mkdir -p $dest
-                  cp -avL ${self.base}/TTF/*.ttf $dest
-                '';
-              }
-              (
-                lib.mkIf (isTermFont v)
+            lib.nameValuePair n (lib.makeScope final.newScope (self: (let
+              base = self.callPackage ./src/base.nix {
+                pname = n;
+                private-build-plans = v;
+              };
+            in
+              lib.mkMerge [
                 {
-                  nerd = final.stdenvNoCC.mkDerivation {
-                    pname = "${n}-nerd";
-                    version = self.base.version;
-                    src = self.base;
-                    nativeBuildInputs = [prev.nerd-font-patcher];
-                    buildPhase = ''
-                      set -x
-                      trap 'set +x' ERR
-                      mkdir -p $out
-                      for file in ./TTF/*.ttf ; do
-                        nerd-font-patcher \
-                          --mono \
-                          --careful \
-                          --complete \
-                          --no-progressbars \
-                          --outputdir $out $file &>/dev/null
-                      done
-                      set +x
-                    '';
-                    dontInstall = true;
-                  };
-                  ttf-nerd = final.runCommand "${n}-ttf-nerd" {} ''
+                  inherit base;
+                  ttf = final.runCommand "${n}-ttf" {} ''
                     dest=$out/share/fonts/truetype
                     mkdir -p $dest
-                    cp -avL ${self.nerd}/*.ttf $dest
+                    cp -avL ${base}/TTF/*.ttf $dest
                   '';
                 }
-              )
-            ])));
+                (
+                  lib.mkIf (isTermFont v)
+                  rec {
+                    nerd = final.stdenvNoCC.mkDerivation {
+                      pname = "${n}-nerd";
+                      version = base.version;
+                      src = base;
+                      nativeBuildInputs = [prev.nerd-font-patcher];
+                      buildPhase = ''
+                        set -x
+                        trap 'set +x' ERR
+                        mkdir -p $out
+                        for file in ./TTF/*.ttf ; do
+                          nerd-font-patcher \
+                            --mono \
+                            --careful \
+                            --complete \
+                            --no-progressbars \
+                            --outputdir $out $file &>/dev/null
+                        done
+                        set +x
+                      '';
+                      dontInstall = true;
+                    };
+                    ttf-nerd = final.runCommand "${n}-ttf-nerd" {} ''
+                      dest=$out/share/fonts/truetype
+                      mkdir -p $dest
+                      cp -avL ${nerd}/*.ttf $dest
+                    '';
+                  }
+                )
+              ])));
         in
           lib.mapAttrs' buildFn (mapTomls ./src);
       };
