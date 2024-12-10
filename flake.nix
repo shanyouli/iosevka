@@ -89,7 +89,7 @@
                 let nerdnames = "${lib.escape ["\"" "\\"] (builtins.toJSON (builtins.attrNames nerdfonts))}" | from json
                 for $i in $nerdnames {
                   print $"::group:::(ansi green_underline)build ($i) font..."
-                  nix build $".#($i).base"  -L
+                  nix build $".#($i).nerd"  -L
                   cd ./result
                   ^zip -9 -r $"($DIST)/($i)-nerd.zip" */*
                   cd ..

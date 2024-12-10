@@ -54,6 +54,7 @@ jobs:
           file: "./dist/*.zip"
           tag_name: ${{ env.TAG_NAME }}
           tags: true
+          draft: false
           overwrite: true
           default_release_name: "Release ${{ env.TAG_NAME }}"
           default_release_body: "update font version ${{ env.TAG_NAME }}"
