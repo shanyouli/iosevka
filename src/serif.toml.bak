@@ -1,0 +1,54 @@
+[buildPlans.PragmasevkaSerif]
+family = "Pragmasevka-serif"
+spacing = "normal"
+serifs = "slab"
+noCvSs = true
+exportGlyphNames = false
+noLigation = true
+
+  [buildPlans.PragmasevkaSerif.variants]
+  inherits = "ss08"
+  [buildPlans.PragmasevkaSerif.metricOverride]
+  leading = 1080
+  xHeight = 550
+
+    [buildPlans.PragmasevkaSerif.variants.design]
+    three = "flat-top-serifed"
+    zero = "slashed"
+    capital-i = "serifed"
+    capital-j = "serifed-both-sides"
+    f = "serifless"
+    g = "double-storey-open"
+    i = "zshaped"
+    k = "diagonal-tailed-cursive-top-left-serifed"
+    l = "serifed"
+    r = "top-serifed"
+    caret = "low"
+    paren = "normal"
+    brace = "straight"
+    ampersand = "closed"
+    percent = "rings-continuous-slash"
+
+[buildPlans.PragmasevkaSerif.weights.SemiBold]
+shape = 600
+menu = 600
+css = 600
+
+[buildPlans.PragmasevkaSerif.weights.ExtraBold]
+shape = 800
+menu = 800
+css = 800
+
+[buildPlans.PragmasevkaSerif.weights.Heavy]
+shape = 900
+menu = 900
+css = 900
+
+[buildPlans.PragmasevkaSerif.widths.Normal]
+shape = 500
+menu = 5
+css = "normal"
+
+[buildPlans.PragmasevkaSerif.slopes]
+upright = "default.Upright"
+italic = "default.Italic"

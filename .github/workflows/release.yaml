@@ -1,0 +1,50 @@
+on:
+  schedule:
+    - cron: '0 0 * * 5' # 每周五的 UTC 时间 00:00 执行（可根据需要调整时区）
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RUN_BUILD: false
+    steps:
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-experimental-features = nix-command flakes
+            allow-import-from-derivation = true
+
+      - name: Install Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: update source
+        run: |
+          old_commit=$(git rev-parse --short=7 HEAD)
+          nix run .#update
+          if [[ "$(git rev-parse --short=7 HEAD)" != "${old_commit}" ]]; then
+             echo "RUN_BUILD=true" >> $GITHUB_ENV
+             echo "TAG_NAME=$(jq -r '.iosevka.version' _sources/generated.json)" >> $GITHUB_ENV
+          fi
+      - name: Build
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: nix run .#ci
+      - name: Push changes
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+      - name: upload-release-assets
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        uses: xresloader/upload-to-github-release@v1
+        with:
+          file: "./dist/*.zip"
+          tag_name: ${{ env.TAG_NAME }}
+          tags: true
+          overwrite: true
+          default_release_name: "Release ${{ env.TAG_NAME }}"
+          default_release_body: "update font version ${{ env.TAG_NAME }}"

@@ -1,0 +1,56 @@
+[buildPlans.Pragmasevka]
+family = "Pragmasevka"
+spacing = "term"
+serifs = "sans"
+noCvSs = true
+exportGlyphNames = true
+
+  hintParams = ["-a", "qqq"]
+  [buildPlans.Pragmasevka.variants]
+  inherits = "ss08"
+  [buildPlans.Pragmasevka.metricOverride]
+  leading = 1080
+  xHeight = 550
+    [buildPlans.Pragmasevka.variants.design]
+    three = "flat-top-serifless"
+    zero = "slashed"
+    capital-j = "serifed"
+    f = "flat-hook-serifed"
+    k = "diagonal-tailed-cursive-serifless"
+    l = "serifed"
+    caret = "low"
+    paren = "normal"
+    brace = "curly-flat-boundary"
+    ampersand = "closed"
+    percent = "rings-continuous-slash"
+  [buildPlans.Pragmasevka.ligations]
+  inherits = "dlig"
+
+[buildPlans.Pragmasevka.widths.normal]
+shape = 550
+menu  = 5
+css   = "normal"
+
+[buildPlans.Pragmasevka.weights.regular]
+shape = 425
+menu = 400
+css = 400
+
+[buildPlans.Pragmasevka.weights.semibold]
+shape = 600
+menu = 600
+css = 600
+
+[buildPlans.Pragmasevka.weights.bold]
+shape = 800
+menu = 700
+css = 700
+
+[buildPlans.Pragmasevka.weights.black]
+shape = 900
+menu = 900
+css = 900
+
+[buildPlans.Pragmasevka.slopes]
+upright = "default.Upright"
+italic = "default.Italic"
