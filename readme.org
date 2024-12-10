@@ -1,2 +1,12 @@
-* 说明
+** 说明
 这是我的自己根据 iosevka 字体自定义配置
+** 使用方法
+ 从 [[https://github.com/shanyouli/iosevka/releases][Releases]] 中下载对应的 zip 文件或者执行下面代码
+ #+begin_src bash
+nix build github:shanyouli/iosevka#PragmasevkaSerif.base
+nix build github:shanyouli/iosevka#PragmasevkaSans.base
+nix build github:shanyouli/iosevka#Pragmasevka.base
+nix build github:shanyouli/iosevka#Pragmasevka.nerd # 使用了 nixpkgs-24.11 中使用的 nerd-font-patcher 添加 Symbola
+ #+end_src
+** 提示
+1. 如果你需要 nerd 字符，请下载带有 nerd 的 zip 文件
