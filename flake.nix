@@ -14,21 +14,21 @@
         pname = builtins.head (builtins.attrNames attrs.buildPlans);
       in ("term" == attrs.buildPlans.${pname}.spacing);
       mapTomls = dir: let
-        p = toString dir;
         isTomlFile = n: v: v == "regular" && (lib.hasSuffix ".toml" n);
-        getPname = f: builtins.head (builtins.attrNames (builtins.fromTOML (builtins.readFile f)).buildPlans);
+        getPname = f:
+          builtins.head (builtins.attrNames (builtins.fromTOML (builtins.readFile f)).buildPlans);
       in (lib.filterAttrs (n: v: v != null)
         (lib.mapAttrs' (n: v: (
             if (isTomlFile n v)
             then
               (let
-                f = p + "/${n}";
+                f = dir + "/${n}";
                 pname = getPname f;
               in
                 lib.nameValuePair pname f)
             else lib.nameValuePair "" null
           ))
-          (builtins.readDir p)));
+          (builtins.readDir dir)));
     in {
       imports = [
         # To import a flake module
@@ -98,28 +98,28 @@
               '';
               checkPhase = ''${pkgs.nushell}/bin/nu --commands "nu-check --debug '$target'"'';
             };
-            update = {
-              type = "app";
-              program = pkgs.writeTextFile rec {
-                name = "upnvfether";
-                executable = true;
-                destination = "/bin/${name}";
-                text = ''
-                  #!${pkgs.nushell}/bin/nu
-                  let key_args = [ "-r" "10"  "--keep-going" "-j" "3" "--commit-changes"]
-                  let nvfetcher_config = $env.HOME | path join ".config" "nvfetcher.toml"
-                  if ($nvfetcher_config | path exists) {
-                    let key_args = $key_args | append "-k"
-                    let key_args = $key_args | append $nvfetcher_config
-                  }
-                  with-env { NIX_PATH: "nixpkgs=${inputs.nixpkgs}" } {
-                    print $"::group::(ansi green_underline)Update source by nvfetcher(ansi reset)..."
-                    ${pkgs.nvfetcher}/bin/nvfetcher ..$key_args
-                    print $"::endgroup::"
-                  }
-                '';
-                checkPhase = ''${pkgs.nushell}/bin/nu --commands "nu-check --debug '$target'"'';
-              };
+          };
+          upnvfetcher = {
+            type = "app";
+            program = pkgs.writeTextFile rec {
+              name = "upnvfether";
+              executable = true;
+              destination = "/bin/${name}";
+              text = ''
+                #!${pkgs.nushell}/bin/nu
+                let key_args = [ "-r" "10" "-j" "3" "--commit-changes"]
+                let nvfetcher_config = $env.HOME | path join ".config" "nvfetcher.toml"
+                if ($nvfetcher_config | path exists) {
+                  let key_args = $key_args | append "-k"
+                  let key_args = $key_args | append $nvfetcher_config
+                }
+                with-env { NIX_PATH: "nixpkgs=${inputs.nixpkgs}" } {
+                  print $"::group::(ansi green_underline)Update source by nvfetcher(ansi reset)..."
+                  ${pkgs.nvfetcher}/bin/nvfetcher ...$key_args
+                  print $"::endgroup::"
+                }
+              '';
+              checkPhase = ''${pkgs.nushell}/bin/nu --commands "nu-check --debug '$target'"'';
             };
           };
         };

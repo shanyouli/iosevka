@@ -21,17 +21,26 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Prepare github bot
+        run: |
+          git config --local user.email "flakebot@users.noreply.github.com"
+          git config --local user.name "flakebot"
       - name: update source
         run: |
           old_commit=$(git rev-parse --short=7 HEAD)
-          nix run .#update
+          nix run .#upnvfetcher
           if [[ "$(git rev-parse --short=7 HEAD)" != "${old_commit}" ]]; then
              echo "RUN_BUILD=true" >> $GITHUB_ENV
              echo "TAG_NAME=$(jq -r '.iosevka.version' _sources/generated.json)" >> $GITHUB_ENV
           fi
       - name: Build
         if: ${{ env.RUN_BUILD  == 'true' }}
-        run: nix run .#ci
+        run: |
+          cat > secrets.toml <<EOF
+          [keys]
+          github = "${{ secrets.GITHUB_TOKEN }}"
+          EOF
+          nix run .#ci
       - name: Push changes
         if: ${{ env.RUN_BUILD  == 'true' }}
         uses: ad-m/github-push-action@master
