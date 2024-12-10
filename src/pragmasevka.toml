@@ -10,7 +10,7 @@ noLigation = true
   inherits = "ss08"
   [buildPlans.PragmasevkaSans.metricOverride]
   leading = 1080
-  xHeight = 550
+  # xHeight = 550
 
     [buildPlans.PragmasevkaSans.variants.design]
     three = "flat-top-serifless"

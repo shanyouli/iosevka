@@ -112,6 +112,9 @@
                 if ($nvfetcher_config | path exists) {
                   let key_args = $key_args | append "-k"
                   let key_args = $key_args | append $nvfetcher_config
+                } else if (($env.PWD | path join "secrets.toml") | path exists) {
+                  let key_args = $key_args | append "-k"
+                  let key_args = $key_args | append ($env.PWD | path join "secrets.toml")
                 }
                 with-env { NIX_PATH: "nixpkgs=${inputs.nixpkgs}" } {
                   print $"::group::(ansi green_underline)Update source by nvfetcher(ansi reset)..."
