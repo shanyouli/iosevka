@@ -82,7 +82,7 @@
                   print $"::group:::(ansi green_underline)build ($i) font..."
                   nix build $".#($i).base" -L
                   cd ./result
-                  ^zip -9 -r $"($DIST)/($i).zip" */*
+                  ^zip -9 -r $"($DIST)/($i).zip" */* # 避免emacs 色彩问题 */
                   cd ..
                   print "::endgroup::"
                 }
@@ -166,6 +166,8 @@
                             --careful \
                             --complete \
                             --no-progressbars \
+                            --quiet \
+                            --adjust-line-height \
                             --outputdir $out $file &>/dev/null
                         done
                         set +x
