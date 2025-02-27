@@ -1,0 +1,42 @@
+name: Auto Update Flake Inputs
+on:
+  schedule:
+    # run this daily at 8am UTC, or roughly 4am eastern
+    - cron: '30 2 * * 4'
+  # Allows you to run this workflow manually from the Actions tab
+  # push:
+  #   branches:
+  #     - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RUN_BUILD: false
+    steps:
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-experimental-features = nix-command flakes
+            allow-import-from-derivation = true
+
+      - name: Install Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare github bot
+        run: |
+          git config --local user.email "flakebot@users.noreply.github.com"
+          git config --local user.name "flakebot"
+      - name: update source
+        run: nix flake update --commit-lock-file
+      - name: test-ci
+        run: nix build .#Pragmasevka.nerd
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true

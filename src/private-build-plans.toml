@@ -9,8 +9,9 @@ exportGlyphNames = true
   [buildPlans.Pragmasevka.variants]
   inherits = "ss08"
   [buildPlans.Pragmasevka.metricOverride]
-  leading = 1080
-  # xHeight = 550
+  # leading = 1080
+  leading = 1200
+  # xHeight = 600
     [buildPlans.Pragmasevka.variants.design]
     three = "flat-top-serifless"
     zero = "slashed"

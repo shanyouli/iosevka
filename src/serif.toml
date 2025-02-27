@@ -9,7 +9,7 @@ noLigation = true
   [buildPlans.PragmasevkaSerif.variants]
   inherits = "ss08"
   [buildPlans.PragmasevkaSerif.metricOverride]
-  leading = 1080
+  leading = 1200
   # xHeight = 550
 
     [buildPlans.PragmasevkaSerif.variants.design]

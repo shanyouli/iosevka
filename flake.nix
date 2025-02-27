@@ -80,17 +80,16 @@
                 mkdir $DIST
                 for $i in $packageName {
                   print $"::group:::(ansi green_underline)build ($i) font..."
-                  # nix build $".#($i).base" -L
-                  # cd ./result
-                  # ^zip -9 -r $"($DIST)/($i).zip" */*
-                  # cd ..
+                  nix build $".#($i).base" -L
+                  cd ./result
+                  ^zip -9 -r $"($DIST)/($i).zip" */*
+                  cd ..
                   print "::endgroup::"
                 }
                 let nerdnames = "${lib.escape ["\"" "\\"] (builtins.toJSON (builtins.attrNames nerdfonts))}" | from json
                 for $i in $nerdnames {
                   print $"::group:::(ansi green_underline)build ($i) nerd-font font..."
                   nix build $".#($i).nerd"  -L
-                  ls -al ./result
                   cd ./result
                   ^zip -9 -r $"($DIST)/($i)-nerd.zip" *.ttf
                   cd ..
