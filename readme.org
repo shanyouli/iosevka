@@ -1,5 +1,6 @@
 ** 说明
-这是我的自己根据 iosevka 字体自定义配置
+这是我的自己根据 iosevka 字体自定义配置, 一款模仿 PragmataPro 的英文字体。
+完整的构建配置参考 [[./src/private-build-plans.toml][private-build-plans.toml]]
 ** 使用方法
  从 [[https://github.com/shanyouli/iosevka/releases][Releases]] 中下载对应的 zip 文件或者执行下面代码
  #+begin_src bash
@@ -10,3 +11,8 @@ nix build github:shanyouli/iosevka#Pragmasevka.nerd # 使用了 nixpkgs-24.11 �
  #+end_src
 ** 提示
 1. 如果你需要 nerd 字符，请下载带有 nerd 的 zip 文件
+
+** 感谢
+1. [[https://github.com/N-R-K/Iosvmata][Iosvmate]] 当前字体主要的配置参考对象，也是一款优秀的字体。
+2. [[https://github.com/protesilaos/iosevka-comfy/tree/master][Iosevka Comfy]] 又一款定制 iosevka 的字体，给了我很多启发。
+3. [[https://github.com/viperML/iosevka][viperML/iosevka]] 给了我使用 github action 自动构建的启发。

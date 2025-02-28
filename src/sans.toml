@@ -1,29 +1,28 @@
-
-[buildPlans.pragma-sevka-serif]
-family = "Pragma Sevka Serif"
+[buildPlans.pragma-sevka-sans]
+family = "Pragma Sevka Sans"
 spacing = "normal"
-serifs = "slab"
+serifs = "sans"
 noCvSs = true
 exportGlyphNames = false
 noLigation = true
 hintParams = ["-a", "qqq"]
 
-[buildPlans.pragma-sevka-serif.variants]
+[buildPlans.pragma-sevka-sans.variants]
 inherits = "ss08"
 
-[buildPlans.pragma-sevka-serif.metricOverride]
+[buildPlans.pragma-sevka-sans.metricOverride]
 leading = 1200 # 如果你希望更小，也许可以设置为 1080,
 # xHeight = 550
 
-[buildPlans.pragma-sevka-serif.variants.design]
-three = "flat-top-serifed"
+[buildPlans.pragma-sevka-sans.variants.design]
+three = "flat-top-serifless"
 zero = "slashed"
-capital-i = "serifed"
-capital-j = "serifed-both-sides"
+capital-i = "short-serifed"
+capital-j = "serifless"
 f = "serifless"
 g = "double-storey-open"
 i = "zshaped"
-k = "diagonal-tailed-cursive-top-left-serifed"
+k = "diagonal-tailed-cursive-serifless"
 l = "serifed"
 r = "top-serifed"
 caret = "low"
@@ -32,29 +31,29 @@ brace = "straight"
 ampersand = "closed"
 percent = "rings-continuous-slash"
 
-[buildPlans.pragma-sevka-serif.weights.regular]
+[buildPlans.pragma-sevka-sans.weights.regular]
 shape = 400
 menu  = 400
 css   = 400
 
-[buildPlans.pragma-sevka-serif.weights.bold]
+[buildPlans.pragma-sevka-sans.weights.bold]
 shape = 700
 menu  = 700
 css   = 700
 
-[buildPlans.pragma-sevka-serif.slopes.upright]
+[buildPlans.pragma-sevka-sans.slopes.upright]
 angle = 0
 shape = "upright"
 menu  = "upright"
 css   = "normal"
 
-[buildPlans.pragma-sevka-serif.slopes.italic]
+[buildPlans.pragma-sevka-sans.slopes.italic]
 angle = 9.4
 shape = "italic"
 menu  = "italic"
 css   = "italic"
 
-[buildPlans.pragma-sevka-serif.widths.normal]
+[buildPlans.pragma-sevka-sans.widths.normal]
 shape = 525
 menu  = 5
 css   = "normal"

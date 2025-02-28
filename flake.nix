@@ -3,7 +3,8 @@
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
   outputs = inputs @ {flake-parts, ...}:
@@ -14,7 +15,7 @@
         pname = builtins.head (builtins.attrNames attrs.buildPlans);
       in ("term" == attrs.buildPlans.${pname}.spacing);
       mapTomls = dir: let
-        isTomlFile = n: v: v == "regular" && (lib.hasSuffix ".toml" n);
+        isTomlFile = n: v: v == "regular" && (lib.hasSuffix ".toml" n) && (n != "private-build-plans.toml");
         getPname = f:
           builtins.head (builtins.attrNames (builtins.fromTOML (builtins.readFile f)).buildPlans);
       in (lib.filterAttrs (n: v: v != null)
@@ -105,7 +106,9 @@
               name = "upnvfether";
               executable = true;
               destination = "/bin/${name}";
-              text = ''
+              text = let
+                nvfetcher = inputs.nixpkgs-stable.legacyPackages.${system}.nvfetcher;
+              in ''
                 #!${pkgs.nushell}/bin/nu
                 let key_args = [ "-r" "10" "-j" "3" "--commit-changes"]
                 let nvfetcher_config = $env.HOME | path join ".config" "nvfetcher.toml"
@@ -118,7 +121,7 @@
                 }
                 with-env { NIX_PATH: "nixpkgs=${inputs.nixpkgs}" } {
                   print $"::group::(ansi green_underline)Update source by nvfetcher(ansi reset)..."
-                  ${pkgs.nvfetcher}/bin/nvfetcher ...$key_args
+                  ${nvfetcher}/bin/nvfetcher ...$key_args
                   print $"::endgroup::"
                 }
               '';
