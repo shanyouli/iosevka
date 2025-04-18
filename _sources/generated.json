@@ -13,10 +13,10 @@
             "name": null,
             "owner": "be5invis",
             "repo": "Iosevka",
-            "rev": "v33.2.0",
-            "sha256": "sha256-p3Vs9KoqxMV6hUPlZiKu+TMhROZuMug9nz+JqmNpBUQ=",
+            "rev": "v33.2.1",
+            "sha256": "sha256-3veB083ZJUfQy7xqnQDnooV2comlQI3ZKNZkJiowpJg=",
             "type": "github"
         },
-        "version": "v33.2.0"
+        "version": "v33.2.1"
     }
 }
