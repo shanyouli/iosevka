@@ -3,13 +3,13 @@
 {
   iosevka = {
     pname = "iosevka";
-    version = "v33.2.1";
+    version = "v33.2.2";
     src = fetchFromGitHub {
       owner = "be5invis";
       repo = "Iosevka";
-      rev = "v33.2.1";
+      rev = "v33.2.2";
       fetchSubmodules = false;
-      sha256 = "sha256-3veB083ZJUfQy7xqnQDnooV2comlQI3ZKNZkJiowpJg=";
+      sha256 = "sha256-dhMTcceHru/uLHRY4eWzFV+73ckCBBnDlizP3iY5w5w=";
     };
   };
 }
