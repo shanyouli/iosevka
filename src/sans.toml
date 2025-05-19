@@ -6,6 +6,7 @@ noCvSs = true
 exportGlyphNames = false
 noLigation = true
 hintParams = ["-a", "qqq"]
+buildTextureFeature = true
 
 [buildPlans.pragma-sevka-sans.variants]
 inherits = "ss08"
