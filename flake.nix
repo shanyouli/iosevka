@@ -203,6 +203,10 @@
                                 unpackPhase = ''
                                   7z x -y $src
                                 '';
+                                postPatch = (old.postPatch or "") + ''
+                                  sed -i font-patcher \
+                                    -e "s%'bin', 'scripts', 'name_parser'%'..', 'lib', 'name_parser'%"
+                                '';
                               }))
                             ];
                             buildPhase = ''
@@ -217,7 +221,8 @@
                                   --no-progressbars \
                                   --quiet \
                                   --adjust-line-height \
-                                  --outputdir $out $file &>/dev/null
+                                  --makegroups 6 \
+                                  --outputdir $out $file
                               done
                               set +x
                             '';
