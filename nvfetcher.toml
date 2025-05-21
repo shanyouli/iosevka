@@ -3,5 +3,5 @@ fetch.github = "be5invis/Iosevka"
 src.github = "be5invis/Iosevka"
 
 [nerd-font-patcher]
-src.github = "ryanoasis/nerd-font"
+src.github = "ryanoasis/nerd-fonts"
 fetch.url = "https://github.com/ryanoasis/nerd-fonts/releases/download/$ver/FontPatcher.zip"
