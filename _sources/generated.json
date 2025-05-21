@@ -13,10 +13,25 @@
             "name": null,
             "owner": "be5invis",
             "repo": "Iosevka",
-            "rev": "v33.2.2",
-            "sha256": "sha256-dhMTcceHru/uLHRY4eWzFV+73ckCBBnDlizP3iY5w5w=",
+            "rev": "v33.2.3",
+            "sha256": "sha256-dCHJYGZYTvjDtM2V+NdwXNxHg4kkcVAQD0G3DPtu5ps=",
             "type": "github"
         },
-        "version": "v33.2.2"
+        "version": "v33.2.3"
+    },
+    "nerd-font-patcher": {
+        "cargoLocks": null,
+        "date": null,
+        "extract": null,
+        "name": "nerd-font-patcher",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-kC7XGVwpiiNEGmLz8KehiFd/85Pw6375G2hh3erLIKM=",
+            "type": "url",
+            "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FontPatcher.zip"
+        },
+        "version": "v3.4.0"
     }
 }

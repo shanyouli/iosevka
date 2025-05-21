@@ -3,13 +3,21 @@
 {
   iosevka = {
     pname = "iosevka";
-    version = "v33.2.2";
+    version = "v33.2.3";
     src = fetchFromGitHub {
       owner = "be5invis";
       repo = "Iosevka";
-      rev = "v33.2.2";
+      rev = "v33.2.3";
       fetchSubmodules = false;
-      sha256 = "sha256-dhMTcceHru/uLHRY4eWzFV+73ckCBBnDlizP3iY5w5w=";
+      sha256 = "sha256-dCHJYGZYTvjDtM2V+NdwXNxHg4kkcVAQD0G3DPtu5ps=";
+    };
+  };
+  nerd-font-patcher = {
+    pname = "nerd-font-patcher";
+    version = "v3.4.0";
+    src = fetchurl {
+      url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FontPatcher.zip";
+      sha256 = "sha256-kC7XGVwpiiNEGmLz8KehiFd/85Pw6375G2hh3erLIKM=";
     };
   };
 }
