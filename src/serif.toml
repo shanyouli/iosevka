@@ -43,6 +43,12 @@ shape = 700
 menu  = 700
 css   = 700
 
+[buildPlans.pragma-sevka-serif.slopes.upright]
+angle = 0
+shape = "upright"
+menu  = "upright"
+css   = "normal"
+
 [buildPlans.pragma-sevka-serif.slopes.italic]
 angle = 9.4
 shape = "italic"
