@@ -35,55 +35,118 @@ jobs:
           nix run .#upnvfetcher
           if [[ "$(git rev-parse --short=7 HEAD)" != "${old_commit}" ]]; then
              echo "RUN_BUILD=true" >> $GITHUB_ENV
-             echo "TAG_NAME=$(jq -r '.iosevka.version' _sources/generated.json)" >> $GITHUB_ENV
+          fi
+      - name: get lastest tag
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          LOCAL_TAG=$(jq -r '.iosevka.version' _sources/generated.json)
+          LATEST_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [[ $LATEST_TAG == $LOCAL_TAG ]]; then
+            echo "TAG_NAME=${TAG_NAME}-$(date +%s)" >> $GITHUB_ENV
+          else
+            echo "TAG_NAME=$LOCAL_TAG" >> $GITHUB_ENV
           fi
       - name: Build
         if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
           nix run .#ci
-      # - name: get lastest tag
-      #   if: ${{ env.RUN_BUILD  == 'true' }}
-      #   run: |
-      #     LATEST_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
-      #     if [[ $LATEST_TAG == ${{env.TAG_NAME}} ]];
-      #       echo "TAG_NAME=${TAG_NAME}-$(date +%s)" >> $GITHUB_ENV
-      #     fi
 
-      # - name: download LXGWWenKaiMono
-      #   if: ${{ env.RUN_BUILD  == 'true' }}
-      #   run: |
-      #     lxgw_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest | jq -r .tag_name)
-      #     wget https://github.com/lxgw/LxgwWenKai/releases/download/${lxgw_tag}/LXGWWenKaiMono-Regular.ttf
-      # - name: Download Warcarft-Font-Merger
-      #   if: ${{ env.RUN_BUILD  == 'true' }}
-      #   run: |
-      #     warcarft_font_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
-      #     wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcrft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux.amd64.tar.xz
-      #     tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+      - name: download LXGWWenKaiMono
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          lxgw_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest | jq -r .tag_name)
+          wget -q https://github.com/lxgw/LxgwWenKai/releases/download/${lxgw_tag}/LXGWWenKaiMono-Regular.ttf -O LXGWWenKaiMono-Regular.ttf
       - name: extra-en-font
-        # if: ${{ env.RUN_BUILD  == 'true' }}
+        if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
           unzip ./dist/pragma-sevka-mono.zip
           unzip ./dist/pragma-sevka-mono-nerd.zip
-          tree .
+      - name: Download Warcarft-Font-Merger and merge fonts.
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          warcarft_font_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
+          wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcarft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux.amd64.tar.xz -O WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+          tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./PragmaSevkaMonoNerdFontMono-Regular.ttf -o base.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Norma;Normal" base.otd cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC-NF.ttf
+          rm *.otd
 
-      # - name: Push changes
-      #   if: ${{ env.RUN_BUILD  == 'true' }}
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     force: true
-      # - name: upload-release-assets
-      #   if: ${{ env.RUN_BUILD  == 'true' }}
-      #   uses: xresloader/upload-to-github-release@v1
-      #   with:
-      #     file: "./dist/*.zip"
-      #     tag_name: ${{ env.TAG_NAME }}
-      #     tags: true
-      #     draft: false
-      #     overwrite: true
-      #     default_release_name: "Release ${{ env.TAG_NAME }}"
-      #     default_release_body: "update font version ${{ env.TAG_NAME }}"
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./TTF/pragma-sevka-mono-normalregularupright.ttf -o base.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Norma;Normal" base.otd cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
+          rm *.otd
+      - name: Download width.py
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          wget -q https://github.com/georgealbert/MyNerdFonts/raw/refs/heads/main/width.py
+          sudo apt update && sudo apt install -y fontforge python3-fontforge python3-fonttools p7zip jq
+
+      - name: Fix Merged font
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          python width.py -m Pragma-Sevka-SC.ttf -o 1000 -t 1050
+          python width.py -m Pragma-Sevka-SC-w1050.ttf -o 500 -t 525
+          python width.py -m Pragma-Sevka-SC-w1050-w525.ttf -f 525 -l -50 -n 50 -a 1050
+          mv Pragma-Sevka-SC-w1050-w525.ttf Pragma-Sevka-SC.ttf
+
+          python width.py -m Pragma-Sevka-SC-NF.ttf -o 1000 -t 1050
+          python width.py -m Pragma-Sevka-SC-NF-w1050.ttf -o 500 -t 525
+          python width.py -m Pragma-Sevka-SC-NF-w1050-w525.ttf -f 525 -l -50 -n 50 -a 1050
+          mv Pragma-Sevka-SC-NF-w1050-w525.ttf Pragma-Sevka-SC-NF.ttf
+
+      - name: Generate artifact info
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          echo 'fontinfo<<EOF' >> $GITHUB_ENV
+          git log -1 --oneline >> $GITHUB_ENV
+
+          # Print font info.
+          echo "" >> $GITHUB_ENV
+          echo "* PragmaSevkaMonoNerdFontMono-Regular.ttf:" >> $GITHUB_ENV
+          python width.py -c ./PragmaSevkaMonoNerdFontMono-Regular.ttf >> $GITHUB_ENV
+
+          echo "" >> $GITHUB_ENV
+          echo "* pragma-sevka-mono-normalregularupright.ttf:" >> $GITHUB_ENV
+          python width.py -c ./TTF/pragma-sevka-mono-normalregularupright.ttf >> $GITHUB_ENV
+
+          echo "" >> $GITHUB_ENV
+          echo "* LXGWWenKaiMono-Regular.ttf:" >> $GITHUB_ENV
+          python width.py -c ./LXGWWenKaiMono-Regular.ttf >> $GITHUB_ENV
+
+          echo "" >> $GITHUB_ENV
+          echo "* Pragma-Sevka-SC.ttf:" >> $GITHUB_ENV
+          python width.py -c Pragma-Sevka-SC.ttf >> $GITHUB_ENV
+
+          echo "" >> $GITHUB_ENV
+          echo "* Pragma-Sevka-SC-NF.ttf:" >> $GITHUB_ENV
+          python width.py -c ./Pragma-Sevka-SC-NF.ttf >> $GITHUB_ENV
+
+          echo 'EOF' >> $GITHUB_ENV
+          echo ${{ env.fontinfo }}
+      - name: Push changes
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+      - name: upload-release-assets
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        uses: xresloader/upload-to-github-release@v1
+        with:
+          file: |
+            "./dist/*.zip"
+            ./Pragma-Sevka-SC.ttf
+            ./Pragma-Sevka-SC-NF.ttf
+          tag_name: ${{ env.TAG_NAME }}
+          tags: true
+          draft: ${{ github.event_name == 'workflow_dispatch' && true || false }}
+          overwrite: true
+          default_release_name: "Release ${{ env.TAG_NAME }}"
+          default_release_body: |
+            ${{ env.fontinfo }}
