@@ -22,8 +22,8 @@ jobs:
             extra-experimental-features = nix-command flakes
             allow-import-from-derivation = true
 
-      - name: Install Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      # - name: Install Magic Nix Cache
+      #   uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Checkout
         uses: actions/checkout@v3
