@@ -68,7 +68,7 @@ jobs:
         run: |
           warcarft_font_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
-          wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcarft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux.amd64.tar.xz -O WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+          wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcarft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz -O WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
           tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./PragmaSevkaMonoNerdFontMono-Regular.ttf -o base.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
