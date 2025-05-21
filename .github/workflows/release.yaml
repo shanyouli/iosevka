@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      RUN_BUILD: false
+      RUN_BUILD: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
     steps:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -28,6 +28,10 @@ jobs:
       - name: update source
         run: |
           old_commit=$(git rev-parse --short=7 HEAD)
+          cat > secrets.toml <<EOF
+          [keys]
+          github = "${{ secrets.GITHUB_TOKEN }}"
+          EOF
           nix run .#upnvfetcher
           if [[ "$(git rev-parse --short=7 HEAD)" != "${old_commit}" ]]; then
              echo "RUN_BUILD=true" >> $GITHUB_ENV
@@ -36,25 +40,50 @@ jobs:
       - name: Build
         if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
-          cat > secrets.toml <<EOF
-          [keys]
-          github = "${{ secrets.GITHUB_TOKEN }}"
-          EOF
           nix run .#ci
-      - name: Push changes
-        if: ${{ env.RUN_BUILD  == 'true' }}
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          force: true
-      - name: upload-release-assets
-        if: ${{ env.RUN_BUILD  == 'true' }}
-        uses: xresloader/upload-to-github-release@v1
-        with:
-          file: "./dist/*.zip"
-          tag_name: ${{ env.TAG_NAME }}
-          tags: true
-          draft: false
-          overwrite: true
-          default_release_name: "Release ${{ env.TAG_NAME }}"
-          default_release_body: "update font version ${{ env.TAG_NAME }}"
+      # - name: get lastest tag
+      #   if: ${{ env.RUN_BUILD  == 'true' }}
+      #   run: |
+      #     LATEST_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #       https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+      #     if [[ $LATEST_TAG == ${{env.TAG_NAME}} ]];
+      #       echo "TAG_NAME=${TAG_NAME}-$(date +%s)" >> $GITHUB_ENV
+      #     fi
+
+      # - name: download LXGWWenKaiMono
+      #   if: ${{ env.RUN_BUILD  == 'true' }}
+      #   run: |
+      #     lxgw_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #       https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest | jq -r .tag_name)
+      #     wget https://github.com/lxgw/LxgwWenKai/releases/download/${lxgw_tag}/LXGWWenKaiMono-Regular.ttf
+      # - name: Download Warcarft-Font-Merger
+      #   if: ${{ env.RUN_BUILD  == 'true' }}
+      #   run: |
+      #     warcarft_font_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #       https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
+      #     wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcrft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux.amd64.tar.xz
+      #     tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+      - name: extra-en-font
+        # if: ${{ env.RUN_BUILD  == 'true' }}
+        run: |
+          unzip ./dist/pragma-sevka-mono.zip
+          unzip ./dist/pragma-sevka-mono-nerd.zip
+          tree .
+
+      # - name: Push changes
+      #   if: ${{ env.RUN_BUILD  == 'true' }}
+      #   uses: ad-m/github-push-action@master
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     force: true
+      # - name: upload-release-assets
+      #   if: ${{ env.RUN_BUILD  == 'true' }}
+      #   uses: xresloader/upload-to-github-release@v1
+      #   with:
+      #     file: "./dist/*.zip"
+      #     tag_name: ${{ env.TAG_NAME }}
+      #     tags: true
+      #     draft: false
+      #     overwrite: true
+      #     default_release_name: "Release ${{ env.TAG_NAME }}"
+      #     default_release_body: "update font version ${{ env.TAG_NAME }}"
