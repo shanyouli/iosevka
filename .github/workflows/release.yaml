@@ -81,7 +81,7 @@ jobs:
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
           rm *.otd
-          tree && exit 1
+          # tree && exit 1
       - name: Download width.py
         if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
@@ -137,11 +137,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           force: true
-      - name: upload-release-assets
+      - name: Release Commit Fonts
         if: ${{ env.RUN_BUILD  == 'true' }}
-        uses: xresloader/upload-to-github-release@v1
-        with:
-          file: |
+        uses: softprops/action-gh-release@v2
+        with: 
+          files: |
             ./dist/pragma-sevka-mono-nerd.zip
             ./dist/pragma-sevka-mono.zip
             ./dist/pragma-sevka-serif.zip
@@ -149,9 +149,7 @@ jobs:
             ./Pragma-Sevka-SC.ttf
             ./Pragma-Sevka-SC-NF.ttf
           tag_name: ${{ env.TAG_NAME }}
-          tags: true
-          draft: ${{ github.event_name == 'workflow_dispatch' && true || false }}
-          overwrite: true
-          default_release_name: "Release ${{ env.TAG_NAME }}"
-          default_release_body: |
+          name: "Release ${{ env.TAG_NAME }}"
+          body: |
             ${{ env.fontinfo }}
+          draft: ${{ github.event_name == 'workflow_dispatch' && true || false }}
