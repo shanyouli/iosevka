@@ -81,6 +81,7 @@ jobs:
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
           rm *.otd
+          tree && exit 1
       - name: Download width.py
         if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
@@ -99,6 +100,7 @@ jobs:
           python width.py -m Pragma-Sevka-SC-NF-w1050.ttf -o 500 -t 525
           python width.py -m Pragma-Sevka-SC-NF-w1050-w525.ttf -f 525 -l -50 -n 50 -a 1050
           mv Pragma-Sevka-SC-NF-w1050-w525.ttf Pragma-Sevka-SC-NF.ttf
+          
 
       - name: Generate artifact info
         if: ${{ env.RUN_BUILD  == 'true' }}
