@@ -43,7 +43,7 @@ jobs:
           LATEST_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           if [[ $LATEST_TAG == $LOCAL_TAG ]]; then
-            echo "TAG_NAME=${TAG_NAME}-$(date +%s)" >> $GITHUB_ENV
+            echo "TAG_NAME=${LOCAL_TAG}-$(date +%s)" >> $GITHUB_ENV
           else
             echo "TAG_NAME=$LOCAL_TAG" >> $GITHUB_ENV
           fi
