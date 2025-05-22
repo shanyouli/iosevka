@@ -140,7 +140,10 @@ jobs:
         uses: xresloader/upload-to-github-release@v1
         with:
           file: |
-            "./dist/*.zip"
+            ./dist/pragma-sevka-mono-nerd.zip
+            ./dist/pragma-sevka-mono.zip
+            ./dist/pragma-sevka-serif.zip
+            ./dist/pragma-sevka-sans.zip
             ./Pragma-Sevka-SC.ttf
             ./Pragma-Sevka-SC-NF.ttf
           tag_name: ${{ env.TAG_NAME }}
