@@ -13,11 +13,11 @@
             "name": null,
             "owner": "be5invis",
             "repo": "Iosevka",
-            "rev": "v33.2.6",
-            "sha256": "sha256-X3oLe7CrPokvGsxaKuaaeHp9MIYHIMVASYUPpA1zcY0=",
+            "rev": "v33.2.7",
+            "sha256": "sha256-LS4c79/QmBSgsgSY/Tddmf2M6U0LcISMapnWK7Eu1Ak=",
             "type": "github"
         },
-        "version": "v33.2.6"
+        "version": "v33.2.7"
     },
     "nerd-font-patcher": {
         "cargoLocks": null,
