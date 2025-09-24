@@ -78,7 +78,7 @@ jobs:
 
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./TTF/pragma-sevka-mono-normalregularupright.ttf -o base.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
-          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
           rm *.otd
           # tree && exit 1
