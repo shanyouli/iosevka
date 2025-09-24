@@ -34,7 +34,7 @@ jobs:
       - name: update source
         run: nix flake update --commit-lock-file
       - name: test-ci
-        run: nix build .#pragma-sevka-sans.nerd
+        run: nix build .#pragma-sevka-mono.nerd
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
