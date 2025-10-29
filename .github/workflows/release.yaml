@@ -1,6 +1,6 @@
 on:
   schedule:
-    - cron: '0 0 * * 5' # 每周五的 UTC 时间 00:00 执行（可根据需要调整时区）
+    - cron: "0 0 * * 5" # 每周五的 UTC 时间 00:00 执行（可根据需要调整时区）
   workflow_dispatch:
 
 jobs:
@@ -70,18 +70,19 @@ jobs:
             https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
           wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcarft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz -O WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
           tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
+          echo "start Pragma sevka mono NF...................."
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./PragmaSevkaMonoNerdFontMono-Regular.ttf -o base.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC-NF.ttf
           rm *.otd
-
+          echo "start Pragma sevka mono...................."
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./TTF/pragma-sevka-mono-normalregularupright.ttf -o base.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
           rm *.otd
-          # tree && exit 1
+          tree
       - name: Download width.py
         if: ${{ env.RUN_BUILD  == 'true' }}
         run: |
@@ -100,7 +101,6 @@ jobs:
           python width.py -m Pragma-Sevka-SC-NF-w1050.ttf -o 500 -t 525
           python width.py -m Pragma-Sevka-SC-NF-w1050-w525.ttf -f 525 -l -50 -n 50 -a 1050
           mv Pragma-Sevka-SC-NF-w1050-w525.ttf Pragma-Sevka-SC-NF.ttf
-          
 
       - name: Generate artifact info
         if: ${{ env.RUN_BUILD  == 'true' }}
@@ -140,7 +140,7 @@ jobs:
       - name: Release Commit Fonts
         if: ${{ env.RUN_BUILD  == 'true' }}
         uses: softprops/action-gh-release@v2
-        with: 
+        with:
           files: |
             ./dist/pragma-sevka-mono-nerd.zip
             ./dist/pragma-sevka-mono.zip
