@@ -70,17 +70,17 @@ jobs:
             https://api.github.com/repos/nowar-fonts/Warcraft-Font-Merger/releases/latest | jq -r .tag_name)
           wget https://github.com/nowar-fonts/Warcraft-Font-Merger/releases/download/${warcarft_font_tag}/WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz -O WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
           tar -xvf WarFontMerger-XS-${warcarft_font_tag//v/}-linux-amd64.tar.xz
-          echo "start Pragma sevka mono NF...................."
-          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./PragmaSevkaMonoNerdFontMono-Regular.ttf -o base.otd
-          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
-          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
-          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC-NF.ttf
-          rm *.otd
           echo "start Pragma sevka mono...................."
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./TTF/pragma-sevka-mono-normalregularupright.ttf -o base.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC;Regular;Normal;Normal" base.otd cjk.otd
           ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC.ttf
+          rm *.otd
+          echo "start Pragma sevka mono NF...................."
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./PragmaSevkaMonoNerdFontMono-Regular.ttf -o base.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccdump ./LXGWWenKaiMono-Regular.ttf -o cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/merge-otd -n "Pragma Sevka SC NF;Regular;Normal;Normal" base.otd cjk.otd
+          ./字体合并补全工具-压缩字库-${warcarft_font_tag//v/}-linux-amd64/otfccbuild base.otd -O2 -o Pragma-Sevka-SC-NF.ttf
           rm *.otd
           tree
       - name: Download width.py
