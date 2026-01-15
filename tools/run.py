@@ -6,7 +6,7 @@ import os
 from fontTools.ttLib import TTFont
 parent_dir = os.path.dirname(__file__)
 sys.path.append(parent_dir)
-from width_font import change_char_width, fix_width, update_metadata
+from width_font import change_char_width, fix_width, update_metadata # noqa: E402
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
@@ -16,7 +16,9 @@ def count_glyphs(font_path: str) -> int:
         # 获取所有字符 （Glyph）
         glyph_count = len(font.getGlyphOrder())
         # 获取实际映射了 Unicode 编码的字符数量
-        unicode_count = len(font.getBestCmap())
+        bestCmap = font.getBestCmap()
+
+        unicode_count = len(bestCmap.items()) if bestCmap else 0
 
         logging.info(f"{font_path}总 Glyph 数量：{glyph_count}")
         logging.info(f"{font_path}带有 Unicode 编码的字符数量：{unicode_count}")
@@ -48,9 +50,9 @@ def merge_font(base_font: str, zh_fonts: list[str], family: str, style: str, out
             except subprocess.SubprocessError as e:
                 logging.error(e)
                 sys.exit(-1)
-            else:
-                from fuse_font import fuse_fonts
-                fuse_font(zh_font,base_font, family, style, output_path)
+        else:
+            from fuse_font import fuse_fonts
+            fuse_fonts(zh_font,base_font, family, style, output_path)
     except Exception as e:
         logging.error(e)
         sys.exit(-1)
@@ -122,15 +124,15 @@ if __name__ == "__main__":
             else:
                 logging.error("font %s is not exists." % i)
                 sys.exit(-1)
-    logging.info(f"[+] 开始合成字体......")
+    logging.info("[+] 开始合成字体......")
     merge_font(args.basefont, args.zhfonts, args.family, args.style, args.outpath)
     if args.width and len(args.width) % 2 == 0:
-        logging.info(f"[+] 开始修改字体宽度......")
+        logging.info("[+] 开始修改字体宽度......")
         change_char_width(args.outpath, args.width)
         
     if args.avgwidth:
-        logging.info(f"[+] 开始修正让字体等宽......")
+        logging.info("[+] 开始修正让字体等宽......")
         fix_width(args.outpath, args.avgwidth, args.line_position, args.line_thickness, args.advanceWidthMax)
 
-    logging.info(f"update font meta")
+    logging.info("update font meta")
     update_metadata(args.outpath, args.family, args.style, args.zh_family)

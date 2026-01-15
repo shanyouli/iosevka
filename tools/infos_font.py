@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from fontTools.ttLib import TTFont
+import os
 
 
 def get_font_info(src_file: str, is_verbose: bool):
@@ -45,7 +46,7 @@ def get_font_info(src_file: str, is_verbose: bool):
         count = 0
         chars = {}
         for name in font.getGlyphOrder(): # 遍历字体的每个字形
-            glyph = font['glyf'][name] # 获取字形数据
+            # glyph = font['glyf'][name] # 获取字形数据
             width, lsb = font['hmtx'][name] # 获取预进宽度(width)和左侧侧轴(lsb)
 
             chars[str(width)] = chars.get(str(width), 0) + 1
@@ -66,8 +67,6 @@ def get_font_info(src_file: str, is_verbose: bool):
 
 if __name__ == '__main__':
     import argparse
-    import os
-
     parser = argparse.ArgumentParser()
     parser.add_argument("font_path", help="font path")
     parser.add_argument("--verbose", "-v", action="store_true")

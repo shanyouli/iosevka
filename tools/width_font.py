@@ -155,8 +155,8 @@ def update_metadata(
     
         # 3. 写入新的 UniqueID (覆盖现有记录)
         # 平台 3, 编码 1, 语言 0x409 (英语) 是最通用的
-        logging.info(f"Change family uniqueID...")
-        name_table.setName(f"{full_name} {version_text.split()[-1]}", 3, 3, 1, 0x409)
+        logging.info("Change family uniqueID...")
+        name_table.setName(f"{full_name} {version_text.split()[-1] if version_text else "0"}", 3, 3, 1, 0x409)
         
         # 3 . 同步 OS/2 表
         if "OS/2" in font:
@@ -227,6 +227,7 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--name", type=str, help="Font family")
     parser.add_argument("-z", "--namezh", type=str, help="ZH Font family",default="")
     parser.add_argument("-o", "--outpath", type=str, help="out put path.", default="")
+
     args = parser.parse_args()
     if args.font is None or (not os.path.exists(os.path.expanduser(args.font))):
         logging.error("font %s is not exists." % args.font)
