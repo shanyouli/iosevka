@@ -5,7 +5,7 @@ import sys
 import os
 import argparse
 import shutil
-import subprocess
+# import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,8 @@ def run_ttfautohint(input_path, output_path):
     """调用系统命令 ttfautohint"""
     try:
         logger.info(f"[+] Running ttfautohint on {input_path}...")
-        subprocess.run(["ttfautohint", "-i", input_path, output_path], check-True)
-        return True
+        # subprocess.run(["ttfautohint", "-i", input_path, output_path], check-True)
+        return (os.system(f"ttfautohint -i '{input_path}', '{output_path}'") == 0)
     except Exception as e:
         logger.error(f"[-] ttfautohint failed: {e}")
         return False
