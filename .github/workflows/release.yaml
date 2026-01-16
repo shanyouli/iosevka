@@ -86,13 +86,13 @@ jobs:
           python tools/run.py -b ./TTF/pragma-sevka-mono-normalregularupright.ttf \
             -z ./LXGWWenKaiMono-Regular.ttf ./LXGWWenKaiMonoLite-Regular.ttf \
             -f "${{ env.FAMILY }}" -s "Regular" -o "output/${{ env.FAMILY_NAME }}-Regular.ttf" \
-            -w 500 525 1000 1050 -x 525 -l 50 -t 50 -a 1050 --hint
+            -w 500 525 1000 1050 -x 525 -l -50 -t 50 -a 1050 --hint
           
           # 合并 NF 版
           python tools/run.py -b ./PragmaSevkaMonoNerdFontMono-Regular.ttf \
             -z ./LXGWWenKaiMono-Regular.ttf ./LXGWWenKaiMonoLite-Regular.ttf \
             -f "${{ env.FAMILY_NF }}" -s "Regular" -o "output/${{ env.FAMILY_NF_NAME }}-Regular.ttf" \
-            -w 500 525 1000 1050 -x 525 -l 50 -t 50 -a 1050 --hint
+            -w 500 525 1000 1050 -x 525 -l -50 -t 50 -a 1050 --hint
         
       - name: 🖋️ Update font metadata
         if: env.RUN_BUILD == 'true'
