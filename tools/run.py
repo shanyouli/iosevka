@@ -65,7 +65,7 @@ def run_ttfautohint(input_path: str, output_path: str=""):
         sys.exit(-1)
     try:
         output_path = (input_path + "-temp.ttf") if output_path == "" else output_path
-        subprocess.run(["ttfautohint", "-i" "-s","-c","-n", "-f" "latn", input_path, output_path], check=True)
+        subprocess.run(["ttfautohint", "-i","-s","-c","-n", "-f" "latn", input_path, output_path], check=True)
         if output_path.endswith("temp.ttf"):
             os.rename(output_path, input_path)
     except subprocess.SubprocessError as e:
