@@ -1,42 +1,62 @@
-name: Auto Update Flake Inputs
+name: 🔄 Auto Update Flake Inputs
+
 on:
   schedule:
-    # run this daily at 8am UTC, or roughly 4am eastern
+    # 每周四 UTC 02:30 执行
     - cron: '30 2 * * 4'
-  # Allows you to run this workflow manually from the Actions tab
-  # push:
-  #   branches:
-  #     - master
   workflow_dispatch:
 
 jobs:
-  build:
+  update-flake:
+    name: 🛠️ Update & Test Flake
     runs-on: ubuntu-latest
-    env:
-      RUN_BUILD: false
     steps:
-      - name: Install Nix
+      - name: 📂 Checkout Repository
+        uses: actions/checkout@v4 # 升级到 v4
+        with:
+          fetch-depth: 0
+
+      - name: ❄️ Install Nix
         uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: |
             extra-experimental-features = nix-command flakes
             allow-import-from-derivation = true
 
-      # - name: Install Magic Nix Cache
-      #   uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Prepare github bot
+      - name: 🤖 Prepare GitHub Bot
         run: |
           git config --local user.email "flakebot@users.noreply.github.com"
           git config --local user.name "flakebot"
-      - name: update source
-        run: nix flake update --commit-lock-file
-      - name: test-ci
-        run: nix build .#pragma-sevka-mono.nerd
-      - name: Push changes
+
+      - name: 🔄 Update Flake Inputs
+        id: update
+        run: |
+          old_hash=$(sha256sum flake.lock)
+          nix flake update --commit-lock-file
+          new_hash=$(sha256sum flake.lock)
+          
+          if [ "$old_hash" != "$new_hash" ]; then
+            echo "CHANGED=true" >> $GITHUB_ENV
+            echo "✨ Flake inputs updated."
+          else
+            echo "CHANGED=false" >> $GITHUB_ENV
+            echo "😴 No updates found."
+          fi
+
+      - name: 🧪 Test Build
+        if: env.CHANGED == 'true'
+        run: |
+          echo "🔨 Testing build for pragma-sevka-mono.nerd..."
+          nix build .#pragma-sevka-mono.nerd --print-build-logs
+
+      - name: ⬆️ Push Changes
+        if: env.CHANGED == 'true'
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          force: true
+          branch: ${{ github.ref }}
+          force: false # 除非必要，否则建议关闭 force 以防意外覆盖
+
+      - name: ✅ Done
+        if: env.CHANGED == 'false'
+        run: echo "No changes to push. Workflow finished."
