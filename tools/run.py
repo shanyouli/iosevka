@@ -161,4 +161,4 @@ if __name__ == "__main__":
         update_metadata(args.outpath, args.family, args.style, args.zh_family)
     if args.hint:
         logging.info("%s auto hint." % args.outpath)
-        run_ttfautohint(args.output)
+        run_ttfautohint(args.outpath)
