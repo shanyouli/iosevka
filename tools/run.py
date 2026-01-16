@@ -3,6 +3,7 @@ import logging
 import sys
 import subprocess
 import os
+import shutil
 from fontTools.ttLib import TTFont
 parent_dir = os.path.dirname(__file__)
 sys.path.append(parent_dir)
@@ -57,14 +58,26 @@ def merge_font(base_font: str, zh_fonts: list[str], family: str, style: str, out
         logging.error(e)
         sys.exit(-1)
 
-
+def run_ttfautohint(input_path: str, output_path: str=""):
+    """使用 ttfautohint 命令将字体进行 autohint 化"""
+    if not shutil.which("ttfautohint"):
+        logging.error("Please install ttfautohint")
+        sys.exit(-1)
+    try:
+        output_path = (input_path + "-temp.ttf") if output_path == "" else output_path
+        subprocess.run(["ttfautohint", "-i" "-s","-c","-n", "-f" "latn", input_path, output_path], check=True)
+        if output_path.endswith("temp.ttf"):
+            os.rename(output_path, input_path)
+    except subprocess.SubprocessError as e:
+        logging.error(e)
+        sys.exit(-1)
 
 if __name__ == "__main__":
     # 使用方法：
     # py run.py -b base-font -z
     # python run.py -b base-font -z zfont1 zfont2 \
     #   -w 500 525 1000 1025 -x 525  -l -50 -t 50 -a 1050 \
-    #   -f mytest -s Regular -o output.ttf
+    #   -f mytest -s Regular -o output.ttf --hint
     
     import argparse
 
@@ -111,28 +124,41 @@ if __name__ == "__main__":
 
     parser.add_argument("-n","--zh-family", type=str, help="ZH Font family",default="")
 
+    parser.add_argument("--hint",help="auto hint", action="store_true")
+
     args = parser.parse_args()
 
-    if args.basefont is None or (not os.path.exists(os.path.expanduser(args.basefont))):
-        logging.error("font %s is not exists." % args.font)
-        sys.exit(-1)
+    if args.basefont is None and args.zhfonts is None:
+        if args.outpath and os.path.exists(os.path.expanduser(args.outpath)):
+            pass
+        else:
+            logging.error("如果你需要合并字体，请确保basefont 和zhfonts 存在，否则确保outpath 存在。")
+            sys.exit(-1)
+    else:
+        if not os.path.exists(os.path.expanduser(args.basefont)):
+            logging.error("font %s is not exists." % args.font)
+            sys.exit(-1)
 
-    if args.zhfonts:
         for i in args.zhfonts:
             if os.path.exists(os.path.expanduser(i)):
                 continue
             else:
                 logging.error("font %s is not exists." % i)
                 sys.exit(-1)
-    logging.info("[+] 开始合成字体......")
-    merge_font(args.basefont, args.zhfonts, args.family, args.style, args.outpath)
+        logging.info("[+] 开始合成字体......")
+        merge_font(args.basefont, args.zhfonts, args.family, args.style, args.outpath)
+
     if args.width and len(args.width) % 2 == 0:
         logging.info("[+] 开始修改字体宽度......")
         change_char_width(args.outpath, args.width)
-        
+
     if args.avgwidth:
         logging.info("[+] 开始修正让字体等宽......")
         fix_width(args.outpath, args.avgwidth, args.line_position, args.line_thickness, args.advanceWidthMax)
 
-    logging.info("update font meta")
-    update_metadata(args.outpath, args.family, args.style, args.zh_family)
+    if args.family:
+        logging.info("update font meta")
+        update_metadata(args.outpath, args.family, args.style, args.zh_family)
+    if args.hint:
+        logging.info("%s auto hint." % args.outpath)
+        run_ttfautohint(args.output)
