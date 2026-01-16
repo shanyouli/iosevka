@@ -118,7 +118,8 @@ jobs:
           {
             echo 'fontinfo<<EOF'
             git log -1 --oneline
-            echo "\n\n* PragmaSevkaMonoNerdFontMono-Regular.ttf:"
+            echo ""
+            echo "* PragmaSevkaMonoNerdFontMono-Regular.ttf:"
             python tools/infos_font.py ./PragmaSevkaMonoNerdFontMono-Regular.ttf
 
             echo ""
