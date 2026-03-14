@@ -137,7 +137,12 @@ jobs:
             done
             echo 'EOF'
           } >> $GITHUB_ENV
-
+      - name: 🚀 Push changes
+        if: ${{ env.RUN_BUILD  == 'true' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
       - name: 🚀 Release
         if: env.RUN_BUILD == 'true'
         uses: softprops/action-gh-release@v2
