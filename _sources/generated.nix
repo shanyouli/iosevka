@@ -3,13 +3,13 @@
 {
   iosevka = {
     pname = "iosevka";
-    version = "v34.7.0";
+    version = "v34.8.0";
     src = fetchFromGitHub {
       owner = "be5invis";
       repo = "Iosevka";
-      rev = "v34.7.0";
+      rev = "v34.8.0";
       fetchSubmodules = false;
-      sha256 = "sha256-OwCtp/WufMCzuaPTDCr2siorUC52zgM2e80DyshzsZw=";
+      sha256 = "sha256-Vql44qexuYxiCGmjiQUMilIR488KSHpCDjOgPIEl8L8=";
     };
   };
   nerd-font-patcher = {
