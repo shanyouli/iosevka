@@ -6,7 +6,7 @@
 #   BUILD_NF=true|false    是否打 Nerd Font 补丁（默认 true）
 #   RESTORE_DIR=<dir>      BUILD_TTF=false 时，先把该目录内容并入 build/（布局同 dist/）
 #
-# 产物索引写入 build/manifest.txt，供发布说明等下游步骤读取。
+# 产物索引写入 build/manifest.txt（本地排查用；发布说明按 dist/ 与 output/ 自行匹配资产）。
 #
 # 依赖须先由 python3 scripts/fetch_sources.py 按 sources.json 放好。
 # 依赖版本一律以 sources.json 为准；nerd-font-patcher 的自报版本只做提示，不阻断构建。

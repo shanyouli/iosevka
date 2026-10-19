@@ -91,7 +91,7 @@ metadata:
 
 # 生成 release body 到 release-body.md
 notes:
-    bash scripts/release-notes.sh | tee release-body.md
+    python3 scripts/release_notes.py | tee release-body.md
 
 # ---------------------------------------------------------------- 组合流程
 
@@ -139,7 +139,7 @@ flake-check:
 # 纯本地静态检查：脚本语法、Python 编译、workflow YAML、多字节变量名风险
 check:
     @bash -n scripts/*.sh
-    @python3 -m py_compile scripts/fetch_sources.py
+    @python3 -m py_compile scripts/fetch_sources.py scripts/release_notes.py
     @ruby -ryaml -e 'Dir.glob(".github/workflows/*").each { |f| YAML.load_file(f) }; puts "workflows: ok"'
     @python3 -c 'import pathlib, re, sys; pat = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)(?=[^\x00-\x7f])"); bad = [(str(f), i, m.group(1)) for f in list(pathlib.Path("scripts").glob("*")) + list(pathlib.Path(".github/workflows").glob("*.y*ml")) if f.is_file() for i, line in enumerate(f.read_text().splitlines(), 1) for m in pat.finditer(line)]; [print(f"{f}:{i}: ${n}") for f, i, n in bad]; print(f"多字节变量名风险: {len(bad)}"); sys.exit(1 if bad else 0)'
     @echo "check: ok"

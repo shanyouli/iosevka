@@ -19,6 +19,8 @@
 - 发版决策（是否构建、构建哪些产物、是否 beta、tag 名、复用哪个稳定版资产）**只由 `release.yaml` 中「🔍 探测组件版本」步骤产出的环境变量决定**；后续步骤只能读 `BUILD_*` / `BETA` / `TAG` / `BASE_TAG`，不得内联版本比较。
 - 变更矩阵：iosevka 变化 → 全量 + 正式发布；仅 nf → 重建 nf 与 cn-nf；仅 lxgw → 重建 cn 与 cn-nf；nf 与 lxgw 同时变化 → 重建 nf、cn、cn-nf 后 beta 发布。
 - beta 发布只上传本次变动产生的产物，未变动资产不复制、不上传。
+- release body 结构固定：发布标识（tag / 发布类型 / 基线 / 变更组件）+ 下载链接表 + 字体参数；依赖版本（iosevka、nerd-font-patcher、lxgw）、构建 commit、中间产物明细不得删除，但必须用 `<details>` 折叠，不直接铺开。
+- 下载链接必须是绝对地址 `releases/download/<tag>/<文件名>`（base 取自 `GITHUB_SERVER_URL` + `GITHUB_REPOSITORY`，本地运行时回退到 git remote），不得只写本地路径或文件名。
 - 复用资产只能是「未打补丁 / 未合并」的中间产物（`dist/<plan>.zip`、`dist/<plan>-NF.zip`），禁止用已合并的 `PragmaSevka-*.ttf` 再加工。
 - 步骤顺序固定为「构建 → 合并 → 元数据 → 说明 → 记录并提交 `sources.json` → 创建 release」。`gh release create` 把 tag 打在远端默认分支 HEAD 上，所以必须先提交再发布，tag 才会指向带本次构建记录的 commit。
 - 因此发布步骤失败时，`sources.json` 里可能已留下一个远端不存在的 tag：手动触发 workflow 并勾选 `use_manifest`（跳过上游探测、按清单固定版本全量重建）即可重发，该 tag 会被复用。`build.stable_tag` 只由正式发布推进，beta 不覆盖它。

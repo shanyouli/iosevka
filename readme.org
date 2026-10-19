@@ -110,6 +110,8 @@ CI 里的构建 / 合并 / 元数据 / 记录步骤统一通过 `nix develop --c
 
 beta 发布只包含本次变动的产物；未变动的字体不会被复制进 beta release，需要完整一套请下载最新的正式版本。
 
+release 说明里会列出本次每个产物的下载直链（~releases/download/<tag>/...~）；依赖版本、构建 commit 等辅助信息折叠在 =<details>= 里，点开即可查看。
+
 **手动触发输入**（~workflow_dispatch~）：
 
 | 输入 | 作用 |
