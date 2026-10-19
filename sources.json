@@ -1,31 +1,33 @@
 {
   "build": {
-    "tag": "v34.8.0",
-    "built_at": null,
-    "commit": null,
+    "tag": "v34.9.0",
+    "built_at": "2026-10-19T09:36:57+00:00",
+    "commit": "45aea65",
     "sources": {
-      "iosevka": "v34.8.0",
-      "nerd-font-patcher": "v3.4.0",
+      "iosevka": "v34.9.0",
+      "nerd-font-patcher": "v3.5.1",
       "lxgw-wenkai": "v1.530",
       "lxgw-wenkai-lite": "v1.530"
-    }
+    },
+    "prerelease": false,
+    "stable_tag": "v34.9.0"
   },
   "sources": {
     "iosevka": {
       "type": "git",
       "repo": "be5invis/Iosevka",
       "url": "https://github.com/be5invis/Iosevka.git",
-      "version": "v34.8.0",
+      "version": "v34.9.0",
       "dest": "vendor/iosevka"
     },
     "nerd-font-patcher": {
       "type": "github-release",
       "repo": "ryanoasis/nerd-fonts",
-      "version": "v3.4.0",
+      "version": "v3.5.1",
       "assets": [
         {
           "name": "FontPatcher.zip",
-          "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FontPatcher.zip",
+          "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/FontPatcher.zip",
           "dest": "vendor/FontPatcher.zip",
           "extract_to": "vendor/FontPatcher"
         }
