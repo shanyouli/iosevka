@@ -1,18 +1,130 @@
-** 说明
+* 说明
 这是我的自己根据 iosevka 字体自定义配置, 一款模仿 PragmataPro 的英文字体。
-完整的构建配置参考 [[./src/private-build-plans.toml][private-build-plans.toml]]
-** 使用方法
- 从 [[https://github.com/shanyouli/iosevka/releases][Releases]] 中下载对应的 zip 文件或者执行下面代码
- #+begin_src bash
-nix build github:shanyouli/iosevka#PragmasevkaSerif.base
-nix build github:shanyouli/iosevka#PragmasevkaSans.base
-nix build github:shanyouli/iosevka#Pragmasevka.base
-nix build github:shanyouli/iosevka#Pragmasevka.nerd # 使用了 nixpkgs-24.11 中使用的 nerd-font-patcher 添加 Symbola
- #+end_src
-** 提示
-1. 如果你需要 nerd 字符，请下载带有 nerd 的 zip 文件
+构建配置在 [[./src/][src/]] 下，每个 ~*.toml~ 是一个 build plan。
 
-** 感谢
+**Nix 只提供构建环境**（node、ttfautohint、fontTools/gftools/fontforge、打包工具），不获取任何源码或字体补丁器。所有远程依赖（Iosevka、nerd-font-patcher、LXGW WenKai）由 [[./sources.json][sources.json]] 统一管理：版本号、下载地址、落地路径全部记录在该文件。
+
+* sources.json
+#+begin_src json
+{
+  "build": {                       // 最近一次构建记录（发布流程回写）
+    "tag": "v34.8.0",
+    "built_at": "2026-10-19T12:00:00+08:00",
+    "commit": "abc1234",
+    "sources": { "iosevka": "v34.8.0", "lxgw-wenkai": "v1.530" }
+  },
+  "sources": {
+    "iosevka":           { "type": "git",            "url": "...", "version": "v34.8.0", "dest": "vendor/iosevka" },
+    "nerd-font-patcher": { "type": "github-release", "version": "v3.4.0",
+                           "assets": [ { "name": "FontPatcher.zip", "url": "...", "dest": "vendor/FontPatcher.zip",
+                                         "extract_to": "vendor/FontPatcher" } ] },
+    "lxgw-wenkai":       { "type": "github-release", "version": "v1.530",
+                           "assets": [ { "name": "LXGWWenKaiMono-Regular.ttf", "url": "...", "dest": "vendor/lxgw/..." } ] }
+  }
+}
+#+end_src
+
+字段规则：
+- ~type~：~git~（clone 到 ~dest~）、~github-release~（下载 ~assets~，~extract_to~ 可选解压）、~nixpkgs~（仅占位，不下载）。
+- ~version~ 必须是**明确版本号**，不允许 ~latest~；升级用 ~--latest <name>~ 由脚本解析后写回具体版本。
+- ~url~ / ~dest~ 是实际下载地址与落地路径（~dest~ 在 ~.gitignore~ 中忽略）。
+- ~build.tag~ / ~build.built_at~ / ~build.commit~ 记录当前构建对应的版本。
+
+* 使用方法
+从 [[https://github.com/shanyouli/iosevka/releases][Releases]] 中下载对应的 zip 文件。
+
+* 本地构建
+推荐用 [[https://github.com/casey/just][just]] 作为统一入口（~just --list~ 查看全部操作）：
+
+#+begin_src bash
+just check         # 纯本地静态检查，不联网
+just status        # 查看清单版本 / vendor 状态 / 已有产物
+
+just fetch         # 1. 按 sources.json 获取依赖（联网）
+just devshell      # 2. 进入 Nix 构建环境
+just build         # 3. 构建全部 plan，产物在 build/ 与 dist/
+just merge         # 4. 合并中文字形到 output/
+just metadata      # 5. 更新 name table（版本号取自 sources.json）
+just notes         # 6. 生成 release-body.md
+
+just package       # 已有 vendor/ 时：2-6 一步到位
+just all           # 从零开始：fetch + package
+#+end_src
+
+增量场景：
+
+#+begin_src bash
+just build-ttf                 # 只构建原始 TTF
+just build-nf                  # 只打 Nerd 补丁（复用 build/ 中的 TTF）
+just merge-only                # 只重跑合并 + 元数据 + 说明
+just record v34.8.0-nf1 true   # 记录 beta 构建；省略第二个参数即正式发布
+#+end_src
+
+不装 just 时，等价命令就是直接调用脚本：
+
+#+begin_src bash
+python3 scripts/fetch_sources.py
+nix develop
+BUILD_TTF=true BUILD_NF=true bash scripts/build.sh
+FAMILY="Pragma Sevka" FAMILY_NAME="PragmaSevka-CN" \
+  FAMILY_NF="Pragma Sevka NF CN" FAMILY_NF_NAME="PragmaSevka-NF-CN" \
+  bash scripts/merge.sh
+bash scripts/update-metadata.sh
+#+end_src
+
+维护 flake 与依赖锁：
+#+begin_src bash
+just update-flake                 # 更新全部 flake inputs（写回 flake.lock）
+just update-flake-input nixpkgs   # 只更新单个 input
+just flake-check                  # 校验 flake 输出（不构建）
+#+end_src
+
+清单操作：
+#+begin_src bash
+python3 scripts/fetch_sources.py --list                  # 查看当前固定版本
+python3 scripts/fetch_sources.py --latest iosevka        # 查询上游最新版本并写回清单
+python3 scripts/fetch_sources.py --set iosevka=v34.9.0   # 直接指定版本
+python3 scripts/fetch_sources.py --record-build v34.9.0  # 记录本次构建版本
+#+end_src
+
+* 工作流
+| 文件 | 作用 |
+|------+------|
+| =.github/workflows/release.yaml= | 每周五探测 iosevka / nerd-font-patcher / lxgw 版本并按组件变更发布（见下） |
+| =.github/workflows/build.yaml= | push / PR 时验证构建链路，产物作为 artifact |
+| =.github/workflows/update.yml= | 每两个月更新 flake inputs，并校验 devShell 工具链可用 |
+
+CI 里的构建 / 合并 / 元数据 / 记录步骤统一通过 `nix develop --command just <recipe>` 调用，与本地命令完全一致；只有版本探测这类带动态参数的步骤直接调 `scripts/fetch_sources.py`。
+
+**组件驱动发布**：探测步骤先比较上游最新版本与 ~sources.json~ 中已发布版本，产出环境变量，后续步骤只按变量分流。
+
+| 变更源 | 重建范围 | 发布类型 | tag 形如 |
+|--------+----------+----------+----------|
+| iosevka | 原始 TTF → NF → 中文、中文 NF | 正式 | =v34.8.0= |
+| 仅 nerd-font-patcher | NF、中文 NF | beta（prerelease） | =v34.8.0-nf1= |
+| 仅 lxgw（WenKai 与 Lite） | 中文、中文 NF | beta（prerelease） | =v34.8.0-cn1= |
+| nf + lxgw | NF、中文、中文 NF | beta（prerelease） | =v34.8.0-nf1-cn1= |
+| 无变化 | — | 不发布 | — |
+
+beta 发布只包含本次变动的产物；未变动的字体不会被复制进 beta release，需要完整一套请下载最新的正式版本。
+
+* 命名规范
+参考 [[https://github.com/subframe7536/maple-font/blob/variable/documentation/choose.md][maple-font 的命名规则]]，顺序为 =<BaseName>-<feature/width>-<format marker>-<locale>-<Style>=：
+
+| 文件 | family |
+|------+--------|
+| =PragmaSevka-Regular.ttf= | Pragma Sevka |
+| =PragmaSevka-NF-Regular.ttf= | Pragma Sevka NF |
+| =PragmaSevka-CN-Regular.ttf= | Pragma Sevka CN |
+| =PragmaSevka-NF-CN-Regular.ttf= | Pragma Sevka NF CN |
+
+发布包为 =<plan>.zip= 与 =<plan>-NF.zip=（旧写法 =nerd= 已改为 =NF=）。hint 相关标记（=-AutoHint= / =-unhinted=）只用于发布包名，不进入 family 名。
+
+* 提示
+1. 如果你需要 nerd 字符，请下载带有 nerd 的 zip 文件
+2. ~vendor/~、~build/~、~dist/~ 都不入库，仅 ~vendor/*/.gitkeep~ 占位
+
+* 感谢
 1. [[https://github.com/N-R-K/Iosvmata][Iosvmate]] 当前字体主要的配置参考对象，也是一款优秀的字体。
 2. [[https://github.com/protesilaos/iosevka-comfy/tree/master][Iosevka Comfy]] 又一款定制 iosevka 的字体，给了我很多启发。
 3. [[https://github.com/viperML/iosevka][viperML/iosevka]] 给了我使用 github action 自动构建的启发。

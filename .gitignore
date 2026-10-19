@@ -1,5 +1,14 @@
 /dist/
+/build/
+/output/
+/release-body.md
 /result*
 .DS_Store
 __pycache__/
 *.ttf
+
+# 清单 sources.json 中声明的依赖落地目录，不入库
+/vendor/**
+!/vendor/iosevka/
+!/vendor/lxgw/
+!/vendor/*/.gitkeep

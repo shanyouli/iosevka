@@ -1,8 +1,28 @@
 name: 🚀 Font Merger Pro
+
+# 发版模型：组件驱动。
+#   iosevka 变更       -> 全量构建，正式发布（tag = iosevka 版本）
+#   仅 nf 变更         -> 只重建 NF 产物，beta 发布（tag = <ver>-nfN）
+#   仅 lxgw 变更       -> 只重建中文产物，beta 发布（tag = <ver>-cnN）
+#   nf + lxgw 同时变更 -> 重建 NF 与中文产物，beta 发布（tag = <ver>-nfN-cnN）
+# 所有决策由「🔍 探测组件版本」产出为环境变量，后续步骤只读 env，不再内联版本判断。
 on:
   schedule:
-    - cron: "0 0 * * 5" 
+    - cron: "0 0 * * 5"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "强制指定 Iosevka 版本（如 v34.9.0），留空则探测上游最新 release"
+        required: false
+        default: ""
+      lxgw_version:
+        description: "强制指定 LXGW WenKai 版本（如 v1.530），留空则探测上游最新 release"
+        required: false
+        default: ""
+      force:
+        description: "强制全量重建并正式发布"
+        type: boolean
+        default: false
 
 env:
   FUSION_COPYRIGHT: Copyright 2025 Albert (${{ github.server_url }}/${{ github.repository }})
@@ -11,154 +31,292 @@ env:
   FUSION_LICENSE: "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org"
   IOSEVKA_COPYRIGHT: Copyright 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net).
   LXGW_COPYRIGHT: Copyright 2021-2024 LXGW (https://github.com/lxgw/LxgwWenKai-Lite) Copyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)
-  FAMILY: "Pragma Sevka SC"
-  FAMILY_NAME: "Pragma-Sevka-SC"
-  FAMILY_NF: "Pragma Sevka SC NF"
-  FAMILY_NF_NAME: "Pragma-Sevka-SC-NF"
+  # 命名规范参考 maple-font：<BaseName>-<feature/width>-<format marker>-<locale>-<Style>
+  FAMILY: "Pragma Sevka CN"
+  FAMILY_NAME: "PragmaSevka-CN"
+  FAMILY_NF: "Pragma Sevka NF CN"
+  FAMILY_NF_NAME: "PragmaSevka-NF-CN"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  merge-process:
-    name: 🛠️ 合并并优化字体
+  release:
+    name: 🛠️ 按组件变更发布
     runs-on: ubuntu-latest
-    # 将 RUN_BUILD 初始化逻辑移入 steps，避免环境变量污染
     steps:
       - name: 📂 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Install Nix
+      - name: ❄️ 安装 Nix（只用于提供构建环境）
         uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: |
             extra-experimental-features = nix-command flakes
-            allow-import-from-derivation = true
-        
-      - name: Prepare github bot
+
+      - name: ♻️ 启用 Nix 缓存
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: 🤖 配置 git bot
         run: |
           git config --local user.email "flakebot@users.noreply.github.com"
           git config --local user.name "flakebot"
 
-      - name: Update source and check status
-        id: check_status
+      - name: 🔍 探测组件版本
         run: |
-          old_commit=$(git rev-parse --short=7 HEAD)
-          cat > secrets.toml <<EOF
-          [keys]
-          github = "${{ secrets.GITHUB_TOKEN }}"
-          EOF
-          nix run .#upnvfetcher
-          if [[ "$(git rev-parse --short=7 HEAD)" != "$old_commit" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-             echo "RUN_BUILD=true" >> $GITHUB_ENV
+          set -euo pipefail
+          fs() { python3 scripts/fetch_sources.py "$@"; }
+
+          UP_IOSEVKA="$(fs --print-latest iosevka)"
+          UP_NF="$(fs --print-latest nerd-font-patcher)"
+          UP_CN="$(fs --print-latest lxgw-wenkai)"
+          UP_CN_LITE="$(fs --print-latest lxgw-wenkai-lite)"
+          if [ -n "${{ inputs.version }}" ]; then UP_IOSEVKA="${{ inputs.version }}"; fi
+          if [ -n "${{ inputs.lxgw_version }}" ]; then
+            UP_CN="${{ inputs.lxgw_version }}"
+            UP_CN_LITE="${{ inputs.lxgw_version }}"
           fi
 
-      - name: Get latest tag
-        if: env.RUN_BUILD == 'true'
-        run: |
-          LOCAL_TAG=$(jq -r '.iosevka.version' _sources/generated.json)
-          LATEST_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
-          [[ "$LATEST_TAG" == "$LOCAL_TAG" ]] && TAG_NAME="${LOCAL_TAG}-$(date +%s)" || TAG_NAME="$LOCAL_TAG"
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          CUR_IOSEVKA="$(fs --print-version iosevka)"
+          CUR_NF="$(fs --print-version nerd-font-patcher)"
+          CUR_CN="$(fs --print-version lxgw-wenkai)"
+          CUR_CN_LITE="$(fs --print-version lxgw-wenkai-lite)"
 
-      - name: Build and Download Fonts
-        if: env.RUN_BUILD == 'true'
-        run: |
-          nix run .#ci
-          lxgw_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/lxgw/LxgwWenKai/releases/latest | jq -r .tag_name)
-          lxgw_lite_tag=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/lxgw/LxgwWenKai-Lite/releases/latest | jq -r .tag_name)
-          
-          wget -q "https://github.com/lxgw/LxgwWenKai/releases/download/${lxgw_tag}/LXGWWenKaiMono-Regular.ttf"
-          wget -q "https://github.com/lxgw/LxgwWenKai-Lite/releases/download/${lxgw_lite_tag}/LXGWWenKaiMonoLite-Regular.ttf"
-          
-          unzip -o ./dist/pragma-sevka-mono.zip
-          unzip -o ./dist/pragma-sevka-mono-nerd.zip
-          echo "LXGW_VERSION=$lxgw_tag" >> $GITHUB_ENV
+          if [ "$UP_CN_LITE" != "$UP_CN" ]; then
+            echo "⚠️  lxgw-wenkai($UP_CN) 与 lxgw-wenkai-lite($UP_CN_LITE) 上游版本不一致，各取自身最新"
+          fi
 
-      - name: 📦 安装系统依赖
-        run: sudo apt update && sudo apt install -y fontforge python3-fontforge python3-fonttools p7zip jq gftools ttfautohint
+          echo "iosevka: 上游 $UP_IOSEVKA / 清单 $CUR_IOSEVKA"
+          echo "nf:      上游 $UP_NF / 清单 $CUR_NF"
+          echo "lxgw:    上游 $UP_CN (lite $UP_CN_LITE) / 清单 $CUR_CN (lite $CUR_CN_LITE)"
 
-      - name: 🏗️ 执行字体合并脚本
-        if: env.RUN_BUILD == 'true'
-        run: |
-          mkdir -p output
-          # 合并标准版, 不建议使用进行 hint，它会导致字体数据翻倍
-          python tools/run.py -b ./TTF/pragma-sevka-mono-normalregularupright.ttf \
-            -z ./LXGWWenKaiMono-Regular.ttf ./LXGWWenKaiMonoLite-Regular.ttf \
-            -f "${{ env.FAMILY }}" -s "Regular" -o "output/${{ env.FAMILY_NAME }}-Regular.ttf" \
-            -w 500 525 1000 1050 -x 525 -l -50 -t 50 -a 1050
-          
-          # 合并 NF 版
-          python tools/run.py -b ./PragmaSevkaMonoNerdFontMono-Regular.ttf \
-            -z ./LXGWWenKaiMono-Regular.ttf ./LXGWWenKaiMonoLite-Regular.ttf \
-            -f "${{ env.FAMILY_NF }}" -s "Regular" -o "output/${{ env.FAMILY_NF_NAME }}-Regular.ttf" \
-            -w 500 525 1000 1050 -x 525 -l -50 -t 50 -a 1050
-        
-      - name: 🖋️ Update font metadata
-        if: env.RUN_BUILD == 'true'
-        run: |
-          NOW="v$(TZ='Asia/Shanghai' date +'%Y%m%d.%H%M%S')"
-          for font_path in "output/${{ env.FAMILY_NAME }}-Regular.ttf" "output/${{ env.FAMILY_NF_NAME }}-Regular.ttf"; do
-            is_nf=""
-            [[ "$font_path" == *"-NF-"* ]] && is_nf=" NF"
-            
-            gftools update-nameids "$font_path" \
-              --uniqueid "${{ env.FAMILY }}$is_nf Regular $NOW" \
-              --designer "$FUSION_DEVELOPER" \
-              --manufacturer "$FUSION_DEVELOPER" \
-              --version "$NOW; Iosevka ${{env.TAG_NAME}}; LXGW_WenKai ${{ env.LXGW_VERSION }}" \
-              --copyright "$(printf "$IOSEVKA_COPYRIGHT\n$LXGW_COPYRIGHT\n$FUSION_COPYRIGHT")" \
-              --license "$FUSION_LICENSE"
-            mv "$font_path.fix" "$font_path"
-          done
+          CHG_IOSEVKA=false; if [ "$UP_IOSEVKA" != "$CUR_IOSEVKA" ]; then CHG_IOSEVKA=true; fi
+          CHG_NF=false;      if [ "$UP_NF" != "$CUR_NF" ]; then CHG_NF=true; fi
+          CHG_CN=false
+          if [ "$UP_CN" != "$CUR_CN" ] || [ "$UP_CN_LITE" != "$CUR_CN_LITE" ]; then CHG_CN=true; fi
 
-      - name: 📊 Generate artifact info
-        if: env.RUN_BUILD == 'true'
-        run: |
-          {
-            echo 'fontinfo<<EOF'
-            git log -1 --oneline
-            echo ""
-            echo "* PragmaSevkaMonoNerdFontMono-Regular.ttf:"
-            python tools/infos_font.py ./PragmaSevkaMonoNerdFontMono-Regular.ttf
+          FORCE="${{ inputs.force }}"
+          BUILD_TTF=false; BUILD_NF=false; BUILD_CN=false; BUILD_CN_NF=false; BETA=false
+          if [ "$FORCE" = "true" ]; then
+            BUILD_TTF=true; BUILD_NF=true; BUILD_CN=true; BUILD_CN_NF=true; BETA=false
+          else
+            if [ "$CHG_IOSEVKA" = true ]; then BUILD_TTF=true; fi
+            if [ "$CHG_IOSEVKA" = true ] || [ "$CHG_NF" = true ]; then BUILD_NF=true; fi
+            if [ "$CHG_IOSEVKA" = true ] || [ "$CHG_CN" = true ]; then BUILD_CN=true; fi
+            # NF 是中文 NF 版的上游输入：nf 变化必须重建 cn-nf
+            if [ "$CHG_IOSEVKA" = true ] || [ "$CHG_NF" = true ] || [ "$CHG_CN" = true ]; then
+              BUILD_CN_NF=true
+            fi
+            BETA=true
+            if [ "$CHG_IOSEVKA" = true ]; then BETA=false; fi
+          fi
 
-            echo ""
-            echo "* pragma-sevka-mono-normalregularupright.ttf:"
-            python tools/infos_font.py ./TTF/pragma-sevka-mono-normalregularupright.ttf 
+          RUN=false
+          if [ "$BUILD_TTF" = true ] || [ "$BUILD_NF" = true ] || [ "$BUILD_CN" = true ] || [ "$BUILD_CN_NF" = true ]; then
+            RUN=true
+          fi
 
-            echo ""
-            echo "* LXGWWenKaiMono-Regular.ttf:"
-            python tools/infos_font.py ./LXGWWenKaiMono-Regular.ttf
+          # 派生的执行开关，避免在后续步骤里写复杂表达式
+          DO_BUILD=false
+          if [ "$BUILD_TTF" = true ] || [ "$BUILD_NF" = true ]; then DO_BUILD=true; fi
+          DO_MERGE=false
+          if [ "$BUILD_CN" = true ] || [ "$BUILD_CN_NF" = true ]; then DO_MERGE=true; fi
 
-            for i in ./output/*; do
-              echo ""
-              echo "* $(basename $i)"
-              python tools/infos_font.py $i
+          BASE_TAG="$(fs --get build.stable_tag)"
+          if [ -z "$BASE_TAG" ] && [ "$(fs --get build.prerelease)" != "true" ]; then
+            # 兼容旧清单：没有 stable_tag 时，若上次构建不是 beta 就沿用它
+            BASE_TAG="$(fs --get build.tag)"
+          fi
+          if [ -z "$BASE_TAG" ]; then
+            echo "⚠️  清单中没有可复用的稳定版 tag"
+            if [ "$RUN" = true ]; then
+              echo "⚠️  无稳定版可复用，退化为全量构建"
+              BUILD_TTF=true; DO_BUILD=true
+            fi
+          fi
+
+          CHANGED=""
+          if [ "$CHG_IOSEVKA" = true ]; then CHANGED="${CHANGED}iosevka "; fi
+          if [ "$CHG_NF" = true ]; then CHANGED="${CHANGED}nerd-font-patcher "; fi
+          if [ "$CHG_CN" = true ]; then CHANGED="${CHANGED}lxgw "; fi
+          if [ -z "$CHANGED" ]; then
+            if [ "$FORCE" = "true" ]; then CHANGED="(强制重建)"; else CHANGED="(无变化)"; fi
+          fi
+
+          # tag：iosevka 变更用其版本号，否则 <已发布版本>-nfN/-cnN/-nfN-cnN
+          if [ "$CHG_IOSEVKA" = true ]; then
+            TAG="$UP_IOSEVKA"
+          else
+            parts=()
+            if [ "$CHG_NF" = true ]; then parts+=("nf"); fi
+            if [ "$CHG_CN" = true ]; then parts+=("cn"); fi
+            if [ "$FORCE" = "true" ]; then parts+=("build"); fi
+            N=1
+            while :; do
+              SUFFIX=""
+              for part in "${parts[@]}"; do SUFFIX="${SUFFIX}-${part}${N}"; done
+              if [ -z "$SUFFIX" ]; then SUFFIX="-build${N}"; fi
+              if ! git rev-parse -q --verify "refs/tags/${CUR_IOSEVKA}${SUFFIX}" >/dev/null; then
+                break
+              fi
+              N=$((N + 1))
             done
-            echo 'EOF'
-          } >> $GITHUB_ENV
-      - name: 🚀 Push changes
-        if: ${{ env.RUN_BUILD  == 'true' }}
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          force: true
-      - name: 🚀 Release
-        if: env.RUN_BUILD == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ./dist/*.zip
-            ./output/*.ttf
-            # ./dist/*.zip
-            # # ./dist/pragma-sevka-mono-nerd.zip
-            # # ./dist/pragma-sevka-mono.zip
-            # # ./dist/pragma-sevka-serif.zip
-            # # ./dist/pragma-sevka-sans.zip
-            # ./output/*.ttf
-            # # ./output/Pragma-Sevka-SC-Regular.ttf
-            # # ./output/Pragma-Sevka-SC-NF-Regular.ttf
-          tag_name: ${{ env.TAG_NAME }}
-          name: "Release ${{ env.TAG_NAME }}"
-          body: ${{ env.fontinfo }}
-          draft: ${{ github.event_name == 'workflow_dispatch' && true || false }}
+            TAG="${CUR_IOSEVKA}${SUFFIX}"
+          fi
+
+          {
+            echo "UP_IOSEVKA=$UP_IOSEVKA"
+            echo "UP_NF=$UP_NF"
+            echo "UP_CN=$UP_CN"
+            echo "CHG_IOSEVKA=$CHG_IOSEVKA"
+            echo "CHG_NF=$CHG_NF"
+            echo "CHG_CN=$CHG_CN"
+            echo "BUILD_TTF=$BUILD_TTF"
+            echo "BUILD_NF=$BUILD_NF"
+            echo "BUILD_CN=$BUILD_CN"
+            echo "BUILD_CN_NF=$BUILD_CN_NF"
+            echo "DO_BUILD=$DO_BUILD"
+            echo "DO_MERGE=$DO_MERGE"
+            echo "BETA=$BETA"
+            echo "RUN=$RUN"
+            echo "TAG=$TAG"
+            echo "BASE_TAG=$BASE_TAG"
+            echo "CHANGED=$CHANGED"
+          } >> "$GITHUB_ENV"
+
+          echo "==> tag=$TAG beta=$BETA ttf=$BUILD_TTF nf=$BUILD_NF cn=$BUILD_CN cn-nf=$BUILD_CN_NF"
+          if [ "$RUN" != "true" ]; then
+            echo "所有组件均无变化，跳过发布"
+          fi
+
+      - name: 📥 按 sources.json 获取远程依赖
+        if: env.RUN == 'true'
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "$CHG_IOSEVKA" = true ]; then args+=(--set "iosevka=$UP_IOSEVKA"); fi
+          if [ "$CHG_NF" = true ]; then args+=(--set "nerd-font-patcher=$UP_NF"); fi
+          if [ "$CHG_CN" = true ]; then
+            args+=(--set "lxgw-wenkai=$UP_CN" --set "lxgw-wenkai-lite=$UP_CN_LITE")
+          fi
+
+          targets=()
+          if [ "$BUILD_TTF" = true ]; then targets+=(--only iosevka); fi
+          if [ "$BUILD_NF" = true ]; then targets+=(--only nerd-font-patcher); fi
+          if [ "$BUILD_CN" = true ] || [ "$BUILD_CN_NF" = true ]; then
+            targets+=(--only lxgw-wenkai --only lxgw-wenkai-lite)
+          fi
+
+          nix develop --command just fetch-args "${args[@]}" "${targets[@]}"
+
+      - name: ⬇️ 复用上一版稳定产物
+        if: env.RUN == 'true' && env.BUILD_TTF != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p restore
+          if ! gh release download "$BASE_TAG" --pattern '*mono*.zip' --dir restore; then
+            echo "⚠️  无法从 $BASE_TAG 下载复用产物，退化为全量构建"
+            echo "BUILD_TTF=true" >> "$GITHUB_ENV"
+            echo "DO_BUILD=true" >> "$GITHUB_ENV"
+            nix develop --command just fetch-only iosevka
+            exit 0
+          fi
+
+          need_base=false
+          if [ "$BUILD_NF" = true ] || [ "$BUILD_CN" = true ]; then need_base=true; fi
+          need_nf=false
+          if [ "$BUILD_CN_NF" = true ]; then need_nf=true; fi
+
+          echo "::group::解压复用产物"
+          for z in restore/*.zip; do
+            name="$(basename "$z" .zip)"
+            case "$name" in
+              *-NF) if [ "$need_nf" != true ]; then continue; fi ;;
+              *) if [ "$need_base" != true ]; then continue; fi ;;
+            esac
+            mkdir -p "build/$name"
+            unzip -qo "$z" -d "build/$name"
+          done
+          find build -name '*.ttf' 2>/dev/null || true
+          echo "::endgroup::"
+          if [ "$need_base" = true ] && ! ls build/pragma-sevka-mono/TTF/*.ttf >/dev/null 2>&1; then
+            echo "⚠️  缺少原始 TTF，退化为全量构建"
+            echo "BUILD_TTF=true" >> "$GITHUB_ENV"
+            echo "DO_BUILD=true" >> "$GITHUB_ENV"
+            nix develop --command just fetch-only iosevka
+            exit 0
+          fi
+          if [ "$BUILD_CN_NF" = true ] && ! ls build/pragma-sevka-mono-NF/TTF/*.ttf >/dev/null 2>&1; then
+            echo "⚠️  缺少 NF 产物，退化为全量构建"
+            echo "BUILD_TTF=true" >> "$GITHUB_ENV"
+            echo "BUILD_NF=true" >> "$GITHUB_ENV"
+            echo "DO_BUILD=true" >> "$GITHUB_ENV"
+            nix develop --command just fetch-only iosevka
+            exit 0
+          fi
+
+      - name: 🔨 构建字体
+        if: env.RUN == 'true' && env.DO_BUILD == 'true'
+        run: nix develop --command just build "$BUILD_TTF" "$BUILD_NF"
+
+      - name: 🏗️ 合并 LXGW 中文字形
+        if: env.RUN == 'true' && env.DO_MERGE == 'true'
+        run: nix develop --command just merge "$BUILD_CN" "$BUILD_CN_NF"
+
+      - name: 🖋️ 更新字体元数据
+        if: env.RUN == 'true' && env.DO_MERGE == 'true'
+        run: nix develop --command just metadata
+
+      - name: 📊 生成发布说明
+        if: env.RUN == 'true'
+        run: nix develop --command just notes
+
+      - name: 🚀 发布
+        if: env.RUN == 'true'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          echo "::group::发布资产"
+          assets=()
+          for z in dist/*.zip; do
+            case "$z" in
+              *-NF.zip) if [ "$BUILD_NF" = true ]; then assets+=("$z"); fi ;;
+              *) if [ "$BUILD_TTF" = true ]; then assets+=("$z"); fi ;;
+            esac
+          done
+          if [ "$BUILD_CN" = true ] && [ -f "output/$FAMILY_NAME-Regular.ttf" ]; then
+            assets+=("output/$FAMILY_NAME-Regular.ttf")
+          fi
+          if [ "$BUILD_CN_NF" = true ] && [ -f "output/$FAMILY_NF_NAME-Regular.ttf" ]; then
+            assets+=("output/$FAMILY_NF_NAME-Regular.ttf")
+          fi
+
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "没有可发布的产物" >&2
+            exit 1
+          fi
+
+          flags=(--title "Release $TAG" --notes-file release-body.md)
+          if [ "$BETA" = "true" ]; then flags+=(--prerelease); fi
+          printf '%s\n' "${assets[@]}"
+          echo "::endgroup::"
+          gh release create "$TAG" "${assets[@]}" "${flags[@]}"
+
+      - name: 📝 记录构建版本并回写清单
+        if: env.RUN == 'true'
+        run: |
+          set -euo pipefail
+          nix develop --command just record "$TAG" "$BETA"
+          git add sources.json
+          if [[ -n "$(git status --porcelain sources.json)" ]]; then
+            git commit -m "chore(⬆️): 发布 $TAG"
+            git push
+          else
+            echo "清单无变化"
+          fi
