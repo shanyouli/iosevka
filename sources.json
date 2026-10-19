@@ -1,0 +1,61 @@
+{
+  "build": {
+    "tag": "v34.8.0",
+    "built_at": null,
+    "commit": null,
+    "sources": {
+      "iosevka": "v34.8.0",
+      "nerd-font-patcher": "v3.4.0",
+      "lxgw-wenkai": "v1.530",
+      "lxgw-wenkai-lite": "v1.530"
+    }
+  },
+  "sources": {
+    "iosevka": {
+      "type": "git",
+      "repo": "be5invis/Iosevka",
+      "url": "https://github.com/be5invis/Iosevka.git",
+      "version": "v34.8.0",
+      "dest": "vendor/iosevka"
+    },
+    "nerd-font-patcher": {
+      "type": "github-release",
+      "repo": "ryanoasis/nerd-fonts",
+      "version": "v3.4.0",
+      "assets": [
+        {
+          "name": "FontPatcher.zip",
+          "url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FontPatcher.zip",
+          "dest": "vendor/FontPatcher.zip",
+          "extract_to": "vendor/FontPatcher"
+        }
+      ]
+    },
+    "lxgw-wenkai": {
+      "type": "github-release",
+      "repo": "lxgw/LxgwWenKai",
+      "version": "v1.530",
+      "dest": "vendor/lxgw",
+      "assets": [
+        {
+          "name": "LXGWWenKaiMono-Regular.ttf",
+          "url": "https://github.com/lxgw/LxgwWenKai/releases/download/v1.530/LXGWWenKaiMono-Regular.ttf",
+          "dest": "vendor/lxgw/LXGWWenKaiMono-Regular.ttf"
+        }
+      ]
+    },
+    "lxgw-wenkai-lite": {
+      "type": "github-release",
+      "repo": "lxgw/LxgwWenKai-Lite",
+      "version": "v1.530",
+      "dest": "vendor/lxgw",
+      "assets": [
+        {
+          "name": "LXGWWenKaiMonoLite-Regular.ttf",
+          "url": "https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.530/LXGWWenKaiMonoLite-Regular.ttf",
+          "dest": "vendor/lxgw/LXGWWenKaiMonoLite-Regular.ttf"
+        }
+      ]
+    }
+  }
+}

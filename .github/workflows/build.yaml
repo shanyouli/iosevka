@@ -1,0 +1,37 @@
+name: 🧪 Build Check
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 🏗️ 验证构建链路
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📂 检出代码
+        uses: actions/checkout@v4
+
+      - name: ❄️ 安装 Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-experimental-features = nix-command flakes
+
+      - name: ♻️ 启用 Nix 缓存
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: 📥 按 sources.json 获取远程依赖
+        run: nix develop --command bash -c 'just fetch-only iosevka && just fetch-only nerd-font-patcher'
+
+      - name: 🔨 构建
+        run: nix develop --command just build
+
+      - name: 📦 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: fonts
+          path: dist/*.zip
+          retention-days: 7
