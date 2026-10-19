@@ -9,6 +9,7 @@
 # 产物索引写入 build/manifest.txt，供发布说明等下游步骤读取。
 #
 # 依赖须先由 python3 scripts/fetch_sources.py 按 sources.json 放好。
+# 依赖版本一律以 sources.json 为准；nerd-font-patcher 的自报版本只做提示，不阻断构建。
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -58,10 +59,14 @@ if [[ "$BUILD_NF" == "true" ]]; then
     echo "当前 python 环境缺少 fontforge 模块，请在 nix develop 内运行（devShell 已包含 python3Packages.fontforge）" >&2
     exit 1
   fi
-  ACTUAL_PATCHER="$(cd "$PATCHER_DIR" && python3 font-patcher --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+  # 版本自检只提示不阻断：上游 `--version` 的输出格式不稳定（例如 3.5.x 在
+  # vendor/FontPatcher 位于 git 工作区内时会夹带 `git describe` 得到的 x.y.z 串，
+  # 被这里的 grep 抢到），把版本判定交给 sources.json + 发版探测步骤。
+  PATCHER_OUT="$(cd "$PATCHER_DIR" && python3 font-patcher --version 2>&1 || true)"
+  ACTUAL_PATCHER="$(printf '%s\n' "$PATCHER_OUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
   if [[ -n "$ACTUAL_PATCHER" && "$ACTUAL_PATCHER" != "$EXPECTED_PATCHER" ]]; then
-    echo "nerd-font-patcher 版本不符：清单 $EXPECTED_PATCHER / 实际 $ACTUAL_PATCHER" >&2
-    exit 1
+    echo "⚠️  nerd-font-patcher 自报版本 $ACTUAL_PATCHER 与清单 $EXPECTED_PATCHER 不一致（不阻断，版本以 sources.json 为准）" >&2
+    printf '%s\n' "$PATCHER_OUT" | sed 's/^/    /' >&2
   fi
 fi
 

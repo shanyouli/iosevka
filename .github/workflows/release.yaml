@@ -6,6 +6,11 @@ name: 🚀 Font Merger Pro
 #   仅 lxgw 变更       -> 只重建中文产物，beta 发布（tag = <ver>-cnN）
 #   nf + lxgw 同时变更 -> 重建 NF 与中文产物，beta 发布（tag = <ver>-nfN-cnN）
 # 所有决策由「🔍 探测组件版本」产出为环境变量，后续步骤只读 env，不再内联版本判断。
+#
+# 步骤顺序固定为：构建 → 合并 → 说明 → 记录并提交 sources.json → 创建 release。
+# release 的 tag 用 --target 指向刚推送的构建记录 commit，所以必须先提交再发布。
+# 发布失败时用 workflow_dispatch 勾选 use_manifest 重跑：跳过上游探测，直接按
+# sources.json 的固定版本全量重建后重新发布。
 on:
   schedule:
     - cron: "0 0 * * 5"
@@ -21,6 +26,10 @@ on:
         default: ""
       force:
         description: "强制全量重建并正式发布"
+        type: boolean
+        default: false
+      use_manifest:
+        description: "发布失败后手动重跑：跳过上游探测，直接用 sources.json 的固定版本全量重建并正式发布"
         type: boolean
         default: false
 
@@ -72,23 +81,35 @@ jobs:
           set -euo pipefail
           fs() { python3 scripts/fetch_sources.py "$@"; }
 
-          UP_IOSEVKA="$(fs --print-latest iosevka)"
-          UP_NF="$(fs --print-latest nerd-font-patcher)"
-          UP_CN="$(fs --print-latest lxgw-wenkai)"
-          UP_CN_LITE="$(fs --print-latest lxgw-wenkai-lite)"
-          if [ -n "${{ inputs.version }}" ]; then UP_IOSEVKA="${{ inputs.version }}"; fi
-          if [ -n "${{ inputs.lxgw_version }}" ]; then
-            UP_CN="${{ inputs.lxgw_version }}"
-            UP_CN_LITE="${{ inputs.lxgw_version }}"
-          fi
-
           CUR_IOSEVKA="$(fs --print-version iosevka)"
           CUR_NF="$(fs --print-version nerd-font-patcher)"
           CUR_CN="$(fs --print-version lxgw-wenkai)"
           CUR_CN_LITE="$(fs --print-version lxgw-wenkai-lite)"
 
-          if [ "$UP_CN_LITE" != "$UP_CN" ]; then
-            echo "⚠️  lxgw-wenkai($UP_CN) 与 lxgw-wenkai-lite($UP_CN_LITE) 上游版本不一致，各取自身最新"
+          FORCE="${{ inputs.force }}"
+          USE_MANIFEST="${{ inputs.use_manifest }}"
+
+          if [ "$USE_MANIFEST" = "true" ]; then
+            # 手动重跑：完全不探测上游（上游 API 抖动 / 限流也能跑），按清单固定版本全量重建
+            echo "==> 手动重跑（use_manifest）：跳过上游探测，按 sources.json 固定版本全量重建"
+            UP_IOSEVKA="$CUR_IOSEVKA"
+            UP_NF="$CUR_NF"
+            UP_CN="$CUR_CN"
+            UP_CN_LITE="$CUR_CN_LITE"
+            FORCE="true"
+          else
+            UP_IOSEVKA="$(fs --print-latest iosevka)"
+            UP_NF="$(fs --print-latest nerd-font-patcher)"
+            UP_CN="$(fs --print-latest lxgw-wenkai)"
+            UP_CN_LITE="$(fs --print-latest lxgw-wenkai-lite)"
+            if [ -n "${{ inputs.version }}" ]; then UP_IOSEVKA="${{ inputs.version }}"; fi
+            if [ -n "${{ inputs.lxgw_version }}" ]; then
+              UP_CN="${{ inputs.lxgw_version }}"
+              UP_CN_LITE="${{ inputs.lxgw_version }}"
+            fi
+            if [ "$UP_CN_LITE" != "$UP_CN" ]; then
+              echo "⚠️  lxgw-wenkai($UP_CN) 与 lxgw-wenkai-lite($UP_CN_LITE) 上游版本不一致，各取自身最新"
+            fi
           fi
 
           echo "iosevka: 上游 $UP_IOSEVKA / 清单 $CUR_IOSEVKA"
@@ -100,7 +121,6 @@ jobs:
           CHG_CN=false
           if [ "$UP_CN" != "$CUR_CN" ] || [ "$UP_CN_LITE" != "$CUR_CN_LITE" ]; then CHG_CN=true; fi
 
-          FORCE="${{ inputs.force }}"
           BUILD_TTF=false; BUILD_NF=false; BUILD_CN=false; BUILD_CN_NF=false; BETA=false
           if [ "$FORCE" = "true" ]; then
             BUILD_TTF=true; BUILD_NF=true; BUILD_CN=true; BUILD_CN_NF=true; BETA=false
@@ -149,24 +169,35 @@ jobs:
           fi
 
           # tag：iosevka 变更用其版本号，否则 <已发布版本>-nfN/-cnN/-nfN-cnN
-          if [ "$CHG_IOSEVKA" = true ]; then
-            TAG="$UP_IOSEVKA"
-          else
-            parts=()
-            if [ "$CHG_NF" = true ]; then parts+=("nf"); fi
-            if [ "$CHG_CN" = true ]; then parts+=("cn"); fi
-            if [ "$FORCE" = "true" ]; then parts+=("build"); fi
-            N=1
-            while :; do
-              SUFFIX=""
-              for part in "${parts[@]}"; do SUFFIX="${SUFFIX}-${part}${N}"; done
-              if [ -z "$SUFFIX" ]; then SUFFIX="-build${N}"; fi
-              if ! git rev-parse -q --verify "refs/tags/${CUR_IOSEVKA}${SUFFIX}" >/dev/null; then
-                break
-              fi
-              N=$((N + 1))
-            done
-            TAG="${CUR_IOSEVKA}${SUFFIX}"
+          TAG=""
+          if [ "$USE_MANIFEST" = "true" ]; then
+            # 上次在「🚀 创建 Release」步骤失败时，清单已写入 tag 但远端没有，这里直接复用
+            PREV_TAG="$(fs --get build.tag)"
+            if [ -n "$PREV_TAG" ] && ! git rev-parse -q --verify "refs/tags/${PREV_TAG}" >/dev/null; then
+              TAG="$PREV_TAG"
+              echo "==> 复用清单中未落地的 tag：$TAG"
+            fi
+          fi
+          if [ -z "$TAG" ]; then
+            if [ "$CHG_IOSEVKA" = true ]; then
+              TAG="$UP_IOSEVKA"
+            else
+              parts=()
+              if [ "$CHG_NF" = true ]; then parts+=("nf"); fi
+              if [ "$CHG_CN" = true ]; then parts+=("cn"); fi
+              if [ "$FORCE" = "true" ]; then parts+=("build"); fi
+              N=1
+              while :; do
+                SUFFIX=""
+                for part in "${parts[@]}"; do SUFFIX="${SUFFIX}-${part}${N}"; done
+                if [ -z "$SUFFIX" ]; then SUFFIX="-build${N}"; fi
+                if ! git rev-parse -q --verify "refs/tags/${CUR_IOSEVKA}${SUFFIX}" >/dev/null; then
+                  break
+                fi
+                N=$((N + 1))
+              done
+              TAG="${CUR_IOSEVKA}${SUFFIX}"
+            fi
           fi
 
           {
@@ -276,7 +307,23 @@ jobs:
         if: env.RUN == 'true'
         run: nix develop --command just notes
 
-      - name: 🚀 发布
+      # 先提交再发布：gh release create 默认把 tag 打在远端默认分支 HEAD 上，
+      # 只有先推送带构建记录的 commit，tag 才会指向它。
+      # 若发布失败，清单里会留下一个远端不存在的 tag；用 use_manifest 重跑时会被复用。
+      - name: 📝 记录构建版本并提交清单
+        if: env.RUN == 'true'
+        run: |
+          set -euo pipefail
+          nix develop --command just record "$TAG" "$BETA"
+          git add sources.json
+          if [[ -n "$(git status --porcelain sources.json)" ]]; then
+            git commit -m "chore(⬆️): 发布 $TAG"
+            git push
+          else
+            echo "清单无变化"
+          fi
+
+      - name: 🚀 创建 Release
         if: env.RUN == 'true'
         run: |
           set -euo pipefail
@@ -306,17 +353,15 @@ jobs:
           if [ "$BETA" = "true" ]; then flags+=(--prerelease); fi
           printf '%s\n' "${assets[@]}"
           echo "::endgroup::"
-          gh release create "$TAG" "${assets[@]}" "${flags[@]}"
-
-      - name: 📝 记录构建版本并回写清单
-        if: env.RUN == 'true'
-        run: |
-          set -euo pipefail
-          nix develop --command just record "$TAG" "$BETA"
-          git add sources.json
-          if [[ -n "$(git status --porcelain sources.json)" ]]; then
-            git commit -m "chore(⬆️): 发布 $TAG"
-            git push
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # 该 tag 已有 release（重跑场景）：补齐 / 覆盖资产与说明
+            gh release upload "$TAG" "${assets[@]}" --clobber
+            gh release edit "$TAG" --title "Release $TAG" --notes-file release-body.md
+          elif git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            # tag 已存在但没有 release：基于现有 tag 创建
+            gh release create "$TAG" "${assets[@]}" "${flags[@]}" --verify-tag
           else
-            echo "清单无变化"
+            # tag 打在刚推送的「记录构建版本」commit 上，与默认分支 HEAD 无关
+            gh release create "$TAG" "${assets[@]}" "${flags[@]}" --target "$(git rev-parse HEAD)"
           fi
+          echo "==> 如果这一步失败，用 workflow_dispatch 勾选 use_manifest 重跑（按 sources.json 固定版本重建）"

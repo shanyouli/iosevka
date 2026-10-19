@@ -60,6 +60,8 @@ just merge-only                # 只重跑合并 + 元数据 + 说明
 just record v34.8.0-nf1 true   # 记录 beta 构建；省略第二个参数即正式发布
 #+end_src
 
+依赖版本一律以 ~sources.json~ 为准：~scripts/build.sh~ 对 nerd-font-patcher 的自报版本只做提示（上游 ~--version~ 的输出并不总是只含自身版本号），不会阻断构建。
+
 不装 just 时，等价命令就是直接调用脚本：
 
 #+begin_src bash
@@ -107,6 +109,18 @@ CI 里的构建 / 合并 / 元数据 / 记录步骤统一通过 `nix develop --c
 | 无变化 | — | 不发布 | — |
 
 beta 发布只包含本次变动的产物；未变动的字体不会被复制进 beta release，需要完整一套请下载最新的正式版本。
+
+**手动触发输入**（~workflow_dispatch~）：
+
+| 输入 | 作用 |
+|------+------|
+| =version= | 强制指定 Iosevka 版本，留空则探测上游最新 release |
+| =lxgw_version= | 强制指定 LXGW WenKai（含 Lite）版本，留空则探测上游 |
+| =force= | 强制全量重建并正式发布 |
+| =use_manifest= | 跳过上游探测，按 ~sources.json~ 固定版本全量重建并正式发布 |
+
+**发布失败怎么办**：workflow 的步骤顺序是「构建 → 合并 → 说明 → 提交 ~sources.json~ → 创建 release」。
+若最后一步（创建 release）失败，手动重跑 workflow 并勾选 =use_manifest= 即可：它不查询上游版本（不依赖 GitHub API），直接按 ~sources.json~ 里固定的版本重建，并复用清单里那个还没落地的 tag；资产已存在的 tag 会改成补齐/覆盖资产，不会重复建 tag。
 
 * 命名规范
 参考 [[https://github.com/subframe7536/maple-font/blob/variable/documentation/choose.md][maple-font 的命名规则]]，顺序为 =<BaseName>-<feature/width>-<format marker>-<locale>-<Style>=：
