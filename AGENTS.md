@@ -29,9 +29,10 @@
 
 参考 maple-font（`documentation/choose.md`）的组合顺序：`<BaseName>-<feature/width>-<format marker>-<locale>-<Style>`。
 
-- 文件名：`PragmaSevka-Regular.ttf`、`PragmaSevka-NF-Regular.ttf`、`PragmaSevka-CN-Regular.ttf`、`PragmaSevka-NF-CN-Regular.ttf`
-- family：`Pragma Sevka`、`Pragma Sevka NF`、`Pragma Sevka CN`、`Pragma Sevka NF CN`
-- 发布包：`<plan>.zip` / `<plan>-NF.zip`（`NF` 替代旧写法 `nerd`）
+- 文件名：`PragmaSevka-Mono-NF-Regular.ttf`（mono NF）；中文沿用 `PragmaSevka-CN-Regular.ttf`、`PragmaSevka-NF-CN-Regular.ttf`
+- family：`Pragma Sevka Mono`、`Pragma Sevka Mono NF`、`Pragma Sevka Sans`、`Pragma Sevka Serif`；中文沿用 `Pragma Sevka`、`Pragma Sevka NF CN`
+- 发布包：`<plan>.zip` / `<plan>-NF.zip`（`NF` 替代旧写法 `nerd`）；zip 名与两个中文 ttf 名被下游 nix 包引用，不要改
+- NF 只产一组：`scripts/build.sh` 用 `--makegroups 1`，打完后由 `tools/normalize_nf_names.py` 把 group 名统一成 `<family> NF`（不产 `NF Propo` / `NF Mono`）
 - hint 标记（`-AutoHint` / `-unhinted`）只用于发布包/目录名，不进入 family 名
 
 ## 操作入口

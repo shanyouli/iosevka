@@ -127,17 +127,21 @@ release 说明里会列出本次每个产物的下载直链（~releases/download
 * 命名规范
 参考 [[https://github.com/subframe7536/maple-font/blob/variable/documentation/choose.md][maple-font 的命名规则]]，顺序为 =<BaseName>-<feature/width>-<format marker>-<locale>-<Style>=：
 
-| 文件 | family |
-|------+--------|
-| =PragmaSevka-Regular.ttf= | Pragma Sevka |
-| =PragmaSevka-NF-Regular.ttf= | Pragma Sevka NF |
-| =PragmaSevka-CN-Regular.ttf= | Pragma Sevka CN |
-| =PragmaSevka-NF-CN-Regular.ttf= | Pragma Sevka NF CN |
+| plan | 发布资产 | 内含文件 / 资产名 | family |
+|------+----------+-------------------+--------|
+| mono | =pragma-sevka-mono.zip= | =pragma-sevka-mono-normalregularupright.ttf= 等 | Pragma Sevka Mono |
+| mono + NF | =pragma-sevka-mono-NF.zip= | =PragmaSevka-Mono-NF-Regular.ttf= 等 | Pragma Sevka Mono NF |
+| sans | =pragma-sevka-sans.zip= | =pragma-sevka-sans-normalregularupright.ttf= 等 | Pragma Sevka Sans |
+| serif | =pragma-sevka-serif.zip= | =pragma-sevka-serif-normalregularupright.ttf= 等 | Pragma Sevka Serif |
+| 中文 | =PragmaSevka-CN-Regular.ttf= | 同名 | Pragma Sevka |
+| 中文 + NF | =PragmaSevka-NF-CN-Regular.ttf= | 同名 | Pragma Sevka NF CN |
+
+=NF= 指 Nerd Font 补丁，只产一组（不生成 =NF Propo= / =NF Mono=），由 ~scripts/build.sh~ 打完补丁后交 ~tools/normalize_nf_names.py~ 归一。中文那两行沿用旧口径，不改。
 
 发布包为 =<plan>.zip= 与 =<plan>-NF.zip=（旧写法 =nerd= 已改为 =NF=）。hint 相关标记（=-AutoHint= / =-unhinted=）只用于发布包名，不进入 family 名。
 
 * 提示
-1. 如果你需要 nerd 字符，请下载带有 nerd 的 zip 文件
+1. 如果你需要 nerd 字符，请下载带 =NF= 的资产（=pragma-sevka-mono-NF.zip= / =PragmaSevka-NF-CN-Regular.ttf=）
 2. ~vendor/~、~build/~、~dist/~ 都不入库，仅 ~vendor/*/.gitkeep~ 占位
 
 * 感谢

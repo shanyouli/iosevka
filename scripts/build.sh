@@ -7,6 +7,8 @@
 #   RESTORE_DIR=<dir>      BUILD_TTF=false 时，先把该目录内容并入 build/（布局同 dist/）
 #
 # 产物索引写入 build/manifest.txt（本地排查用；发布说明按 dist/ 与 output/ 自行匹配资产）。
+# NF 产物只产一组（--makegroups 1），名称由 tools/normalize_nf_names.py 归一成
+# "<family> NF"，例如 PragmaSevka-Mono-NF-Regular.ttf。
 #
 # 依赖须先由 python3 scripts/fetch_sources.py 按 sources.json 放好。
 # 依赖版本一律以 sources.json 为准；nerd-font-patcher 的自报版本只做提示，不阻断构建。
@@ -37,13 +39,15 @@ record() {
   printf '%s\t%s\n' "$1" "$2" >> "$MANIFEST"
 }
 
+# 输出制表符分隔的 <plan 名>\t<spacing>\t<family>，family 可能含空格，必须用 tab 分隔
 read_plan() {
   python3 - "$1" <<'PY'
 import sys, tomllib
 with open(sys.argv[1], "rb") as f:
     plans = tomllib.load(f)["buildPlans"]
 name = next(iter(plans))
-print(name, plans[name].get("spacing", "normal"))
+plan = plans[name]
+print("\t".join([name, plan.get("spacing", "normal"), plan.get("family", name)]))
 PY
 }
 
@@ -92,7 +96,7 @@ for plan_file in "$REPO_ROOT"/src/*.toml; do
   base="$(basename "$plan_file")"
   [[ "$base" == "private-build-plans.toml" ]] && continue
 
-  read -r pname spacing <<<"$(read_plan "$plan_file")"
+  IFS=$'\t' read -r pname spacing pfamily <<<"$(read_plan "$plan_file")"
 
   if [[ "$BUILD_TTF" == "true" ]]; then
     gha_group "构建 $pname (spacing=$spacing)"
@@ -124,17 +128,19 @@ for plan_file in "$REPO_ROOT"/src/*.toml; do
 
   if [[ "$spacing" == "term" && "$BUILD_NF" == "true" ]]; then
     gha_group "Nerd Font 补丁 $pname"
-    echo "==> Nerd Font 补丁 $pname"
+    # 只产 NF 一组：--makegroups 1 不会附带 Propo / Mono 组，产物名随后由
+    # tools/normalize_nf_names.py 统一成 "<family> NF"（见 AGENTS.md 命名规范）
+    echo "==> Nerd Font 补丁 $pname（只产 NF 组）"
     rm -rf "$OUT_DIR/$pname-NF"
-    mkdir -p "$OUT_DIR/$pname-NF"
+    mkdir -p "$OUT_DIR/$pname-NF/TTF"
     for f in "$OUT_DIR/$pname"/TTF/*.ttf; do
       ( cd "$PATCHER_DIR" && python3 font-patcher \
-          --mono --careful --complete --no-progressbars --quiet \
-          --adjust-line-height --makegroups 6 \
-          --outputdir "$OUT_DIR/$pname-NF" "$f" )
+          --careful --complete --no-progressbars --quiet \
+          --adjust-line-height --makegroups 1 \
+          --outputdir "$OUT_DIR/$pname-NF/TTF" "$f" )
     done
-    mkdir -p "$OUT_DIR/$pname-NF/TTF"
-    mv "$OUT_DIR/$pname-NF"/*.ttf "$OUT_DIR/$pname-NF/TTF/"
+    python3 "$REPO_ROOT/tools/normalize_nf_names.py" \
+      --dir "$OUT_DIR/$pname-NF/TTF" --family "$pfamily"
     ( cd "$OUT_DIR/$pname-NF" && zip -qr "$DIST_DIR/$pname-NF.zip" . )
     record "$pname-NF" "dist/$pname-NF.zip"
     gha_endgroup

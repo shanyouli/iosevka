@@ -5,7 +5,7 @@
 #   BUILD_CN=true|false        是否生成中文标准版（默认 true）
 #   BUILD_CN_NF=true|false     是否生成中文 NF 版（默认 true）
 #   BASE_TTF=<path>            原始 TTF，默认 build/pragma-sevka-mono/TTF/*upright*.ttf
-#   BASE_NF_TTF=<path>         已打 NF 补丁的 TTF，默认 build/pragma-sevka-mono-NF/TTF/*Regular.ttf
+#   BASE_NF_TTF=<path>         已打 NF 补丁的 TTF，默认 build/pragma-sevka-mono-NF/TTF/PragmaSevka-Mono-NF-Regular.ttf
 #   FAMILY / FAMILY_NAME / FAMILY_NF / FAMILY_NF_NAME  由工作流提供
 set -euo pipefail
 
@@ -33,8 +33,13 @@ if [[ -z "${BASE_TTF:-}" ]]; then
   BASE_TTF="$(find "$REPO_ROOT/build/pragma-sevka-mono/TTF" -name '*upright*.ttf' 2>/dev/null | head -1 || true)"
   BASE_TTF="${BASE_TTF:-$REPO_ROOT/build/pragma-sevka-mono/TTF/pragma-sevka-mono-normalregularupright.ttf}"
 fi
+# 归一后的 NF 产物名由 tools/normalize_nf_names.py 决定；优先用它，找不到再退回 find 兜底
+# （beta 场景复用的可能是旧版资产，文件名还是旧的 NerdFontMono 风格）
 if [[ -z "${BASE_NF_TTF:-}" ]]; then
-  BASE_NF_TTF="$(find "$REPO_ROOT/build/pragma-sevka-mono-NF/TTF" -name '*Regular.ttf' 2>/dev/null | head -1 || true)"
+  BASE_NF_TTF="$REPO_ROOT/build/pragma-sevka-mono-NF/TTF/PragmaSevka-Mono-NF-Regular.ttf"
+  if [[ ! -f "$BASE_NF_TTF" ]]; then
+    BASE_NF_TTF="$(find "$REPO_ROOT/build/pragma-sevka-mono-NF/TTF" -name '*Regular.ttf' 2>/dev/null | head -1 || true)"
+  fi
 fi
 
 LXGW_MAIN="$(asset_dest lxgw-wenkai)"
@@ -65,7 +70,7 @@ fi
 
 if [[ "$BUILD_CN_NF" == "true" ]]; then
   require_lxgw
-  [[ -f "$BASE_NF_TTF" ]] || { echo "缺少 Nerd Font 构建产物（build/pragma-sevka-mono-NF/TTF）" >&2; exit 1; }
+  [[ -f "$BASE_NF_TTF" ]] || { echo "缺少 NF 产物（默认 build/pragma-sevka-mono-NF/TTF/PragmaSevka-Mono-NF-Regular.ttf）" >&2; exit 1; }
   gha_group "合并中文 NF 版 $FAMILY_NF_NAME"
   echo "==> 合并中文 NF 版 -> output/$FAMILY_NF_NAME-Regular.ttf"
   python tools/run.py \
