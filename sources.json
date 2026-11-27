@@ -1,23 +1,23 @@
 {
   "build": {
-    "tag": "v34.9.1",
-    "built_at": "2026-10-30T04:57:40+00:00",
-    "commit": "1c64a1a",
+    "tag": "v34.9.2",
+    "built_at": "2026-11-27T07:18:03+00:00",
+    "commit": "0e361df",
     "sources": {
-      "iosevka": "v34.9.1",
+      "iosevka": "v34.9.2",
       "nerd-font-patcher": "v3.5.1",
       "lxgw-wenkai": "v1.530",
       "lxgw-wenkai-lite": "v1.530"
     },
     "prerelease": false,
-    "stable_tag": "v34.9.1"
+    "stable_tag": "v34.9.2"
   },
   "sources": {
     "iosevka": {
       "type": "git",
       "repo": "be5invis/Iosevka",
       "url": "https://github.com/be5invis/Iosevka.git",
-      "version": "v34.9.1",
+      "version": "v34.9.2",
       "dest": "vendor/iosevka"
     },
     "nerd-font-patcher": {
